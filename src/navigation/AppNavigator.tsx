@@ -60,11 +60,6 @@ export const AppNavigator = () => (
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.mutedText,
-        tabBarIcon: ({ focused }) => (
-          <View style={[styles.iconPill, focused && styles.activeIconPill]}>
-            <Text style={styles.tabIcon}>{tabIcons.Home}</Text>
-          </View>
-        ),
         tabBarIconStyle: { marginTop: 5 },
         tabBarLabelStyle: { fontSize: 12, fontWeight: "800", marginBottom: 7 },
         tabBarStyle: {
@@ -80,6 +75,7 @@ export const AppNavigator = () => (
         component={HomeScreen}
         name="Home"
         options={{
+          tabBarAccessibilityLabel: "홈",
           title: "홈",
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Home" />,
         }}
@@ -88,6 +84,7 @@ export const AppNavigator = () => (
         component={TransactionsNavigator}
         name="TransactionsTab"
         options={{
+          tabBarAccessibilityLabel: "거래",
           title: "거래",
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="TransactionsTab" />,
         }}
@@ -96,6 +93,7 @@ export const AppNavigator = () => (
         component={CategoryScreen}
         name="Categories"
         options={{
+          tabBarAccessibilityLabel: "카테고리",
           title: "카테고리",
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Categories" />,
         }}
@@ -104,6 +102,7 @@ export const AppNavigator = () => (
         component={AssetScreen}
         name="Assets"
         options={{
+          tabBarAccessibilityLabel: "자산",
           title: "자산",
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Assets" />,
         }}
@@ -112,6 +111,7 @@ export const AppNavigator = () => (
         component={BudgetScreen}
         name="Budget"
         options={{
+          tabBarAccessibilityLabel: "예산",
           title: "예산",
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Budget" />,
         }}
@@ -120,6 +120,7 @@ export const AppNavigator = () => (
         component={StatisticsScreen}
         name="Statistics"
         options={{
+          tabBarAccessibilityLabel: "통계",
           title: "통계",
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Statistics" />,
         }}
@@ -128,6 +129,7 @@ export const AppNavigator = () => (
         component={SettingsScreen}
         name="Settings"
         options={{
+          tabBarAccessibilityLabel: "설정",
           title: "설정",
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Settings" />,
         }}
@@ -142,8 +144,14 @@ interface TabIconProps {
 }
 
 const TabIcon = ({ focused, name }: TabIconProps) => (
-  <View style={[styles.iconPill, focused && styles.activeIconPill]}>
-    <Text style={styles.tabIcon}>{tabIcons[name]}</Text>
+  <View
+    accessibilityElementsHidden
+    importantForAccessibility="no-hide-descendants"
+    style={[styles.iconPill, focused && styles.activeIconPill]}
+  >
+    <Text accessible={false} style={styles.tabIcon}>
+      {tabIcons[name]}
+    </Text>
   </View>
 );
 

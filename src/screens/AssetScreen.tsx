@@ -21,8 +21,13 @@ import {
   getTotalLiabilities,
 } from "../utils/assets";
 import { getMonthlyExpense, getMonthlyIncome } from "../utils/calculations";
-import { validateBudgetAmountInput } from "../utils/budget";
-import { formatAmountInput, formatCurrency, formatPercent } from "../utils/format";
+import {
+  AmountInputValidationResult,
+  formatAmountInput,
+  formatCurrency,
+  formatPercent,
+  validateAmountInput,
+} from "../utils/format";
 
 const assetTypeLabels: Record<AssetType, string> = {
   cash: "현금",
@@ -47,6 +52,23 @@ const liabilityTypeLabels: Record<LiabilityType, string> = {
 
 const assetTypeOptions = Object.entries(assetTypeLabels) as [AssetType, string][];
 const liabilityTypeOptions = Object.entries(liabilityTypeLabels) as [LiabilityType, string][];
+
+const validateAssetAmountInput = (
+  value: string,
+  emptyMessage: string,
+): AmountInputValidationResult => {
+  const result = validateAmountInput(value);
+
+  if (result.valid) {
+    return result;
+  }
+
+  if (!value.trim()) {
+    return { valid: false, error: emptyMessage };
+  }
+
+  return result;
+};
 
 export const AssetScreen = () => {
   const {
@@ -102,6 +124,7 @@ export const AssetScreen = () => {
   );
   const previousSnapshot = previousSnapshots[previousSnapshots.length - 1];
   const netWorthChange = getNetWorthChange(currentSnapshot, previousSnapshot);
+  const hasPreviousSnapshot = Boolean(currentSnapshot && previousSnapshot);
   const recentSnapshots = getRecentNetWorthSnapshots(netWorthSnapshots, 12);
   const maxSnapshotValue = Math.max(
     1,
@@ -126,7 +149,7 @@ export const AssetScreen = () => {
   };
 
   const handleAssetSave = async () => {
-    const balanceResult = validateBudgetAmountInput(assetBalance, "자산 금액을 입력해 주세요.");
+    const balanceResult = validateAssetAmountInput(assetBalance, "자산 금액을 입력해 주세요.");
     if (!assetName.trim()) {
       Alert.alert("입력 확인", "자산 이름을 입력해 주세요.");
       return;
@@ -156,7 +179,7 @@ export const AssetScreen = () => {
   };
 
   const handleLiabilitySave = async () => {
-    const balanceResult = validateBudgetAmountInput(
+    const balanceResult = validateAssetAmountInput(
       liabilityBalance,
       "부채 잔액을 입력해 주세요.",
     );
@@ -281,10 +304,14 @@ export const AssetScreen = () => {
         </View>
         {currentSnapshot ? (
           <Text style={[styles.changeText, netWorthChange >= 0 ? styles.incomeText : styles.expenseText]}>
-            저장된 기준으로 지난달보다 {formatCurrency(netWorthChange)} 변동
+            {hasPreviousSnapshot
+              ? `저장된 기준으로 지난달보다 ${formatCurrency(netWorthChange)} 변동`
+              : "이번 달 스냅샷이 저장됐습니다. 다음 달부터 변화 추이를 비교할 수 있습니다."}
           </Text>
         ) : (
-          <Text style={styles.caption}>이번 달 순자산 스냅샷을 저장하면 변화 추이를 볼 수 있습니다.</Text>
+          <Text style={styles.caption}>
+            한 달에 한 번 스냅샷을 저장하면 순자산이 커지는 흐름을 볼 수 있습니다.
+          </Text>
         )}
         <PrimaryButton
           label="이번 달 순자산 저장"
@@ -313,14 +340,20 @@ export const AssetScreen = () => {
       <AppCard>
         <AccountForm
           amount={assetBalance}
+          amountLabel="자산 금액"
+          amountPlaceholder="금액 예: 1000000"
           memo={assetMemo}
+          memoLabel="자산 메모"
           name={assetName}
+          nameLabel="자산 이름"
+          namePlaceholder="이름 예: 입출금통장"
           onAmountChange={(value) => setAssetBalance(formatAmountInput(value))}
           onCancel={editingAssetId ? resetAssetForm : undefined}
           onMemoChange={setAssetMemo}
           onNameChange={setAssetName}
           onSave={handleAssetSave}
           saveLabel={editingAssetId ? "자산 수정" : "자산 추가"}
+          typeLabelPrefix="자산 유형"
           typeOptions={assetTypeOptions}
           selectedType={assetType}
           onTypeChange={setAssetType}
@@ -353,6 +386,8 @@ export const AssetScreen = () => {
       <AppCard>
         <AccountForm
           amount={liabilityBalance}
+          amountLabel="부채 잔액"
+          amountPlaceholder="잔액 예: 500000"
           extraInput={
             <TextInput
               accessibilityLabel="금리"
@@ -365,13 +400,17 @@ export const AssetScreen = () => {
             />
           }
           memo={liabilityMemo}
+          memoLabel="부채 메모"
           name={liabilityName}
+          nameLabel="부채 이름"
+          namePlaceholder="이름 예: 카드 예정 결제액"
           onAmountChange={(value) => setLiabilityBalance(formatAmountInput(value))}
           onCancel={editingLiabilityId ? resetLiabilityForm : undefined}
           onMemoChange={setLiabilityMemo}
           onNameChange={setLiabilityName}
           onSave={handleLiabilitySave}
           saveLabel={editingLiabilityId ? "부채 수정" : "부채 추가"}
+          typeLabelPrefix="부채 유형"
           typeOptions={liabilityTypeOptions}
           selectedType={liabilityType}
           onTypeChange={setLiabilityType}
@@ -432,6 +471,12 @@ interface AccountFormProps<T extends string> {
   selectedType: T;
   amount: string;
   memo: string;
+  nameLabel: string;
+  namePlaceholder: string;
+  amountLabel: string;
+  amountPlaceholder: string;
+  memoLabel: string;
+  typeLabelPrefix: string;
   typeOptions: [T, string][];
   saveLabel: string;
   extraInput?: ReactNode;
@@ -448,6 +493,12 @@ const AccountForm = <T extends string>({
   selectedType,
   amount,
   memo,
+  nameLabel,
+  namePlaceholder,
+  amountLabel,
+  amountPlaceholder,
+  memoLabel,
+  typeLabelPrefix,
   typeOptions,
   saveLabel,
   extraInput,
@@ -460,9 +511,9 @@ const AccountForm = <T extends string>({
 }: AccountFormProps<T>) => (
   <View style={styles.form}>
     <TextInput
-      accessibilityLabel="이름"
+      accessibilityLabel={nameLabel}
       onChangeText={onNameChange}
-      placeholder="이름 예: 입출금통장"
+      placeholder={namePlaceholder}
       placeholderTextColor={colors.mutedText}
       style={styles.input}
       value={name}
@@ -472,7 +523,7 @@ const AccountForm = <T extends string>({
         const active = selectedType === value;
         return (
           <Pressable
-            accessibilityLabel={`${label}${active ? ", 선택됨" : ""}`}
+            accessibilityLabel={`${typeLabelPrefix} ${label}${active ? ", 선택됨" : ""}`}
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
             key={value}
@@ -486,17 +537,17 @@ const AccountForm = <T extends string>({
     </View>
     <TextInput
       accessibilityHint="숫자만 입력하면 천 단위 콤마는 자동으로 표시됩니다."
-      accessibilityLabel="금액"
+      accessibilityLabel={amountLabel}
       keyboardType="number-pad"
       onChangeText={onAmountChange}
-      placeholder="금액 예: 1000000"
+      placeholder={amountPlaceholder}
       placeholderTextColor={colors.mutedText}
       style={styles.input}
       value={amount}
     />
     {extraInput}
     <TextInput
-      accessibilityLabel="메모"
+      accessibilityLabel={memoLabel}
       onChangeText={onMemoChange}
       placeholder="메모 선택 입력"
       placeholderTextColor={colors.mutedText}
@@ -550,8 +601,20 @@ const AccountItem = ({
       </Text>
     </View>
     <View style={styles.accountActions}>
-      <PrimaryButton label="수정" onPress={onEdit} style={styles.smallButton} variant="ghost" />
-      <PrimaryButton label="삭제" onPress={onDelete} style={styles.smallButton} variant="danger" />
+      <PrimaryButton
+        accessibilityLabel={`${name} 수정`}
+        label="수정"
+        onPress={onEdit}
+        style={styles.smallButton}
+        variant="ghost"
+      />
+      <PrimaryButton
+        accessibilityLabel={`${name} 삭제`}
+        label="삭제"
+        onPress={onDelete}
+        style={styles.smallButton}
+        variant="danger"
+      />
     </View>
   </AppCard>
 );

@@ -78,6 +78,7 @@ export const HomeScreen = () => {
     );
     const previousSnapshot = previousSnapshots[previousSnapshots.length - 1];
     const netWorthChange = getNetWorthChange(currentSnapshot, previousSnapshot);
+    const hasPreviousNetWorthSnapshot = Boolean(currentSnapshot && previousSnapshot);
 
     return {
       income,
@@ -95,6 +96,7 @@ export const HomeScreen = () => {
       netWorth,
       currentSnapshot,
       netWorthChange,
+      hasPreviousNetWorthSnapshot,
     };
   }, [assetAccounts, budgets, categories, liabilityAccounts, month, netWorthSnapshots, transactions]);
 
@@ -170,7 +172,9 @@ export const HomeScreen = () => {
         </View>
         <Text style={styles.dashboardCaption}>
           {summary.currentSnapshot
-            ? `저장된 기준으로 지난달보다 ${formatCurrency(summary.netWorthChange)} 변동`
+            ? summary.hasPreviousNetWorthSnapshot
+              ? `저장된 기준으로 지난달보다 ${formatCurrency(summary.netWorthChange)} 변동`
+              : "이번 달 스냅샷은 저장됐습니다. 지난달 기록이 쌓이면 변화를 볼 수 있습니다."
             : "자산 화면에서 이번 달 스냅샷을 저장하면 성장 추이를 볼 수 있습니다."}
         </Text>
       </AppCard>
@@ -204,8 +208,8 @@ export const HomeScreen = () => {
 
       <View style={styles.quickActionRow}>
         <PrimaryButton
-          accessibilityLabel="거래 추가"
-          label="+ 거래 추가"
+          accessibilityLabel="오늘 거래 기록"
+          label="+ 오늘 기록"
           onPress={goToTransactionForm}
           style={styles.quickActionButton}
         />
@@ -316,7 +320,7 @@ export const HomeScreen = () => {
         ))
       ) : (
         <EmptyState
-          actionLabel="거래 추가"
+          actionLabel="첫 거래 추가"
           description="첫 거래를 추가해 보세요."
           onActionPress={goToTransactionForm}
           title="아직 등록된 거래가 없습니다."
