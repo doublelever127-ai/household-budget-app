@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
 
+import { AppCard } from "../components/AppCard";
 import { MonthSelector } from "../components/MonthSelector";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ProgressBar } from "../components/ProgressBar";
@@ -15,8 +16,13 @@ import {
   getDailyAvailableBudget,
   getMonthlyExpense,
 } from "../utils/calculations";
+import {
+  buildCategoryBudgetInputs,
+  isCategoryBudgetOverTotal,
+  validateBudgetAmountInput,
+} from "../utils/budget";
 import { getRemainingDaysInMonth } from "../utils/date";
-import { formatCurrency, formatPercent } from "../utils/format";
+import { formatAmountInput, formatCurrency, formatPercent } from "../utils/format";
 
 export const BudgetScreen = () => {
   const {
@@ -48,38 +54,34 @@ export const BudgetScreen = () => {
     () => getCategoryBudgetUsages(transactions, categories, budget, month),
     [budget, categories, month, transactions],
   );
+  const totalBudgetValidation = useMemo(
+    () => validateBudgetAmountInput(totalBudget, "월간 총예산을 입력해 주세요."),
+    [totalBudget],
+  );
+  const categoryBudgetValidation = useMemo(
+    () => buildCategoryBudgetInputs(categoryBudgets),
+    [categoryBudgets],
+  );
+  const categoryBudgetsOverTotal =
+    totalBudgetValidation.valid &&
+    isCategoryBudgetOverTotal(categoryBudgetValidation.total, totalBudgetValidation.amount);
   const categoryUsageMap = new Map(
     categoryBudgetUsages.map((item) => [item.categoryId, item]),
   );
 
   useEffect(() => {
-    setTotalBudget(budget ? String(budget.totalBudget) : "");
+    setTotalBudget(budget ? formatAmountInput(String(budget.totalBudget)) : "");
     const nextCategoryBudgets: Record<string, string> = {};
     budget?.categoryBudgets?.forEach((item) => {
-      nextCategoryBudgets[item.categoryId] = String(item.amount);
+      nextCategoryBudgets[item.categoryId] = formatAmountInput(String(item.amount));
     });
     setCategoryBudgets(nextCategoryBudgets);
   }, [budget, month]);
 
-  const handleSave = async () => {
-    const parsedTotalBudget = Number(totalBudget.replace(/,/g, "").trim());
-    if (!totalBudget.trim()) {
-      Alert.alert("입력 확인", "월간 총예산을 입력해 주세요.");
-      return;
-    }
-
-    if (!Number.isFinite(parsedTotalBudget) || parsedTotalBudget <= 0) {
-      Alert.alert("입력 확인", "월간 총예산은 0보다 큰 숫자로 입력해 주세요.");
-      return;
-    }
-
-    const parsedCategoryBudgets = Object.entries(categoryBudgets)
-      .map(([categoryId, value]) => ({
-        categoryId,
-        amount: Number(value.replace(/,/g, "").trim()),
-      }))
-      .filter((item) => Number.isFinite(item.amount) && item.amount > 0);
-
+  const saveValidatedBudget = async (
+    parsedTotalBudget: number,
+    parsedCategoryBudgets: typeof categoryBudgetValidation.items,
+  ) => {
     try {
       await saveBudget({
         month,
@@ -92,12 +94,66 @@ export const BudgetScreen = () => {
     }
   };
 
+  const handleSave = async () => {
+    const totalResult = validateBudgetAmountInput(totalBudget, "월간 총예산을 입력해 주세요.");
+    if (!totalResult.valid) {
+      Alert.alert("입력 확인", totalResult.error);
+      return;
+    }
+
+    const categoryResult = buildCategoryBudgetInputs(categoryBudgets);
+    const categoryErrors = Object.entries(categoryResult.errors);
+
+    if (categoryErrors.length) {
+      const categoryErrorText = categoryErrors
+        .map(([categoryId, error]) => {
+          const categoryName =
+            categories.find((category) => category.id === categoryId)?.name ?? "카테고리";
+          return `${categoryName}: ${error}`;
+        })
+        .join("\n");
+
+      Alert.alert("입력 확인", categoryErrorText);
+      return;
+    }
+
+    if (isCategoryBudgetOverTotal(categoryResult.total, totalResult.amount)) {
+      Alert.alert(
+        "예산 합계 확인",
+        "카테고리별 예산 합계가 월간 총예산을 초과했습니다.\n그래도 저장하시겠어요?",
+        [
+          { text: "취소", style: "cancel" },
+          {
+            text: "저장",
+            onPress: () => {
+              void saveValidatedBudget(totalResult.amount, categoryResult.items);
+            },
+          },
+        ],
+      );
+      return;
+    }
+
+    await saveValidatedBudget(totalResult.amount, categoryResult.items);
+  };
+
+  const handleTotalBudgetChange = (value: string) => {
+    setTotalBudget(formatAmountInput(value));
+  };
+
+  const handleCategoryBudgetChange = (categoryId: string, value: string) => {
+    setCategoryBudgets((current) => ({
+      ...current,
+      [categoryId]: formatAmountInput(value),
+    }));
+  };
+
   return (
     <Screen>
       <Text style={styles.title}>예산 설정</Text>
       <MonthSelector month={month} onChange={setSelectedMonth} />
 
-      <View style={styles.summaryCard}>
+      <AppCard style={styles.summaryCard}>
         <View style={styles.summaryHeader}>
           <Text style={styles.summaryTitle}>이번 달 예산 사용률</Text>
           <Text style={[styles.usage, usage > 100 && styles.overUsage]}>
@@ -126,22 +182,35 @@ export const BudgetScreen = () => {
             />
           </View>
         ) : null}
-      </View>
+      </AppCard>
 
-      <View style={styles.form}>
+      <AppCard style={styles.form}>
         <Text style={styles.label}>월간 총예산</Text>
         <TextInput
+          accessibilityHint="숫자만 입력하면 천 단위 콤마는 자동으로 표시됩니다."
+          accessibilityLabel="월간 총예산"
           keyboardType="number-pad"
-          onChangeText={setTotalBudget}
+          onChangeText={handleTotalBudgetChange}
           placeholder="예: 1800000"
           placeholderTextColor={colors.mutedText}
           style={styles.input}
           value={totalBudget}
         />
+        <Text style={styles.helperText}>숫자만 입력하면 콤마는 자동으로 붙습니다.</Text>
+        {totalBudget && !totalBudgetValidation.valid ? (
+          <Text style={styles.errorText}>{totalBudgetValidation.error}</Text>
+        ) : null}
 
         <Text style={styles.sectionTitle}>카테고리별 예산</Text>
+        <Text style={styles.helperText}>카테고리별 예산은 선택 사항입니다.</Text>
+        {categoryBudgetsOverTotal ? (
+          <Text style={styles.warningText}>
+            카테고리별 예산 합계가 월간 총예산을 초과했습니다.
+          </Text>
+        ) : null}
         {expenseCategories.map((category) => {
           const usageItem = categoryUsageMap.get(category.id);
+          const categoryError = categoryBudgetValidation.errors[category.id];
 
           return (
             <View key={category.id} style={styles.categoryBudgetRow}>
@@ -151,16 +220,16 @@ export const BudgetScreen = () => {
                   <Text style={styles.categoryName}>{category.name}</Text>
                 </View>
                 <TextInput
+                  accessibilityLabel={`${category.name} 예산`}
                   keyboardType="number-pad"
-                  onChangeText={(value) =>
-                    setCategoryBudgets((current) => ({ ...current, [category.id]: value }))
-                  }
-                  placeholder="0"
+                  onChangeText={(value) => handleCategoryBudgetChange(category.id, value)}
+                  placeholder="예: 50000"
                   placeholderTextColor={colors.mutedText}
                   style={styles.categoryInput}
                   value={categoryBudgets[category.id] ?? ""}
                 />
               </View>
+              {categoryError ? <Text style={styles.errorText}>{categoryError}</Text> : null}
               {usageItem ? (
                 <View style={styles.categoryUsage}>
                   <ProgressBar
@@ -179,7 +248,7 @@ export const BudgetScreen = () => {
         })}
 
         <PrimaryButton label="저장" onPress={handleSave} style={styles.saveButton} />
-      </View>
+      </AppCard>
     </Screen>
   );
 };
@@ -216,12 +285,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   summaryCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
     marginBottom: spacing.lg,
-    padding: spacing.md,
   },
   summaryHeader: {
     alignItems: "center",
@@ -245,6 +309,26 @@ const styles = StyleSheet.create({
   caption: {
     color: colors.mutedText,
     fontSize: 13,
+    marginTop: spacing.sm,
+  },
+  errorText: {
+    color: colors.expense,
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: spacing.sm,
+  },
+  helperText: {
+    color: colors.mutedText,
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 19,
+    marginTop: spacing.sm,
+  },
+  warningText: {
+    color: colors.warning,
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 19,
     marginTop: spacing.sm,
   },
   cashFlowGrid: {
@@ -279,11 +363,6 @@ const styles = StyleSheet.create({
     color: colors.expense,
   },
   form: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    padding: spacing.md,
   },
   label: {
     color: colors.text,
@@ -292,8 +371,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   input: {
-    backgroundColor: colors.background,
-    borderColor: colors.border,
+    backgroundColor: colors.surfaceSoft,
+    borderColor: colors.borderSoft,
     borderRadius: radius.md,
     borderWidth: 1,
     color: colors.text,
@@ -309,7 +388,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   categoryBudgetRow: {
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.borderSoft,
     borderBottomWidth: 1,
     paddingVertical: spacing.sm,
   },
@@ -335,8 +414,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   categoryInput: {
-    backgroundColor: colors.background,
-    borderColor: colors.border,
+    backgroundColor: colors.surfaceSoft,
+    borderColor: colors.borderSoft,
     borderRadius: radius.md,
     borderWidth: 1,
     color: colors.text,

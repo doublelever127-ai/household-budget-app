@@ -8,6 +8,7 @@ interface EmptyStateProps {
   description?: string;
   actionLabel?: string;
   onActionPress?: () => void;
+  icon?: string;
 }
 
 export const EmptyState = ({
@@ -15,8 +16,12 @@ export const EmptyState = ({
   description,
   actionLabel,
   onActionPress,
+  icon = "🧾",
 }: EmptyStateProps) => (
   <View style={styles.container}>
+    <View style={styles.iconBubble}>
+      <Text style={styles.icon}>{icon}</Text>
+    </View>
     <Text style={styles.title}>{title}</Text>
     {description ? <Text style={styles.description}>{description}</Text> : null}
     {actionLabel && onActionPress ? (
@@ -29,10 +34,22 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.lg,
     borderWidth: 1,
     padding: spacing.xl,
+  },
+  iconBubble: {
+    alignItems: "center",
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.full,
+    height: 48,
+    justifyContent: "center",
+    marginBottom: spacing.md,
+    width: 48,
+  },
+  icon: {
+    fontSize: 24,
   },
   title: {
     color: colors.text,

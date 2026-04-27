@@ -79,3 +79,68 @@ export interface CategoryBudgetUsage {
 }
 
 export type TransactionFilterType = "all" | TransactionType;
+
+export type AssetType =
+  | "cash"
+  | "bank"
+  | "savings"
+  | "investment"
+  | "pension"
+  | "deposit"
+  | "realEstate"
+  | "other";
+
+export interface AssetAccount {
+  id: string;
+  name: string;
+  type: AssetType;
+  balance: number;
+  memo?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AssetAccountInput {
+  name: string;
+  type: AssetType;
+  balance: number;
+  memo?: string;
+}
+
+export type LiabilityType =
+  | "creditCard"
+  | "loan"
+  | "mortgage"
+  | "rentDepositLoan"
+  | "studentLoan"
+  | "minusAccount"
+  | "other";
+
+export interface LiabilityAccount {
+  id: string;
+  name: string;
+  type: LiabilityType;
+  balance: number;
+  interestRate?: number;
+  memo?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LiabilityAccountInput {
+  name: string;
+  type: LiabilityType;
+  balance: number;
+  interestRate?: number;
+  memo?: string;
+}
+
+export interface NetWorthSnapshot {
+  id: string;
+  month: string;
+  totalAssets: number;
+  totalLiabilities: number;
+  netWorth: number;
+  createdAt: string;
+  updatedAt: string;
+}

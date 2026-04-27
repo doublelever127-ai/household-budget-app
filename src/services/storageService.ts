@@ -1,12 +1,22 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { Budget, Category, Transaction } from "../types";
+import {
+  AssetAccount,
+  Budget,
+  Category,
+  LiabilityAccount,
+  NetWorthSnapshot,
+  Transaction,
+} from "../types";
 
 const STORAGE_KEYS = {
   transactions: "ledger.transactions",
   categories: "ledger.categories",
   budgets: "ledger.budgets",
   deletedDefaultCategoryIds: "ledger.deletedDefaultCategoryIds",
+  assetAccounts: "ledger.assetAccounts",
+  liabilityAccounts: "ledger.liabilityAccounts",
+  netWorthSnapshots: "ledger.netWorthSnapshots",
 };
 
 const loadJson = async <T>(key: string): Promise<T | null> => {
@@ -30,5 +40,16 @@ export const storageService = {
     loadJson<string[]>(STORAGE_KEYS.deletedDefaultCategoryIds),
   saveDeletedDefaultCategoryIds: (categoryIds: string[]) =>
     saveJson(STORAGE_KEYS.deletedDefaultCategoryIds, categoryIds),
+  loadAssetAccounts: () => loadJson<AssetAccount[]>(STORAGE_KEYS.assetAccounts),
+  saveAssetAccounts: (assetAccounts: AssetAccount[]) =>
+    saveJson(STORAGE_KEYS.assetAccounts, assetAccounts),
+  loadLiabilityAccounts: () =>
+    loadJson<LiabilityAccount[]>(STORAGE_KEYS.liabilityAccounts),
+  saveLiabilityAccounts: (liabilityAccounts: LiabilityAccount[]) =>
+    saveJson(STORAGE_KEYS.liabilityAccounts, liabilityAccounts),
+  loadNetWorthSnapshots: () =>
+    loadJson<NetWorthSnapshot[]>(STORAGE_KEYS.netWorthSnapshots),
+  saveNetWorthSnapshots: (snapshots: NetWorthSnapshot[]) =>
+    saveJson(STORAGE_KEYS.netWorthSnapshots, snapshots),
   clearAll: () => AsyncStorage.multiRemove(Object.values(STORAGE_KEYS)),
 };

@@ -11,6 +11,7 @@ import { colors, radius, spacing } from "../constants/theme";
 interface PrimaryButtonProps {
   label: string;
   onPress: () => void;
+  accessibilityLabel?: string;
   variant?: "primary" | "secondary" | "danger" | "ghost";
   disabled?: boolean;
   loading?: boolean;
@@ -20,19 +21,22 @@ interface PrimaryButtonProps {
 export const PrimaryButton = ({
   label,
   onPress,
+  accessibilityLabel,
   variant = "primary",
   disabled = false,
   loading = false,
   style,
 }: PrimaryButtonProps) => (
   <Pressable
+    accessibilityLabel={accessibilityLabel ?? label}
     accessibilityRole="button"
     disabled={disabled || loading}
     onPress={onPress}
     style={({ pressed }) => [
       styles.button,
       styles[variant],
-      (pressed || disabled) && styles.dimmed,
+      pressed && styles.pressed,
+      disabled && styles.dimmed,
       style,
     ]}
   >
@@ -44,17 +48,19 @@ export const PrimaryButton = ({
 const styles = StyleSheet.create({
   button: {
     alignItems: "center",
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     flexDirection: "row",
     justifyContent: "center",
-    minHeight: 48,
+    minHeight: 52,
     paddingHorizontal: spacing.lg,
   },
   primary: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryDark,
   },
   secondary: {
     backgroundColor: colors.primarySoft,
+    borderColor: colors.borderSoft,
+    borderWidth: 1,
   },
   danger: {
     backgroundColor: colors.expenseSoft,
@@ -64,7 +70,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "800",
   },
   primaryLabel: {
     color: "#FFFFFF",
@@ -78,7 +84,10 @@ const styles = StyleSheet.create({
   ghostLabel: {
     color: colors.primary,
   },
+  pressed: {
+    opacity: 0.82,
+  },
   dimmed: {
-    opacity: 0.7,
+    opacity: 0.55,
   },
 });

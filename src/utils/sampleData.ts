@@ -1,7 +1,7 @@
 import { subMonths, format } from "date-fns";
 
 import { DEFAULT_CATEGORIES } from "../constants/categories";
-import { Budget, Category, Transaction } from "../types";
+import { AssetAccount, Budget, Category, LiabilityAccount, NetWorthSnapshot, Transaction } from "../types";
 
 const makeId = (prefix: string, index: number) => `${prefix}-sample-${index}`;
 
@@ -133,13 +133,101 @@ export const createSampleData = (baseDate = new Date()) => {
     updatedAt: now,
   }));
 
+  const assetAccounts: AssetAccount[] = [
+    {
+      id: makeId("asset-bank", 0),
+      name: "입출금통장",
+      type: "bank",
+      balance: 3200000,
+      memo: "생활비 계좌",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: makeId("asset-saving", 1),
+      name: "정기적금",
+      type: "savings",
+      balance: 9500000,
+      memo: "비상금",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: makeId("asset-investment", 2),
+      name: "투자 계좌",
+      type: "investment",
+      balance: 7800000,
+      memo: "ETF",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: makeId("asset-pension", 3),
+      name: "연금",
+      type: "pension",
+      balance: 12000000,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: makeId("asset-deposit", 4),
+      name: "보증금",
+      type: "deposit",
+      balance: 20000000,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  const liabilityAccounts: LiabilityAccount[] = [
+    {
+      id: makeId("liability-card", 0),
+      name: "카드 예정 결제액",
+      type: "creditCard",
+      balance: 760000,
+      memo: "다음 결제일",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: makeId("liability-loan", 1),
+      name: "전세대출",
+      type: "rentDepositLoan",
+      balance: 5000000,
+      interestRate: 3.6,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  const netWorthSnapshots: NetWorthSnapshot[] = months.map((month, index) => {
+    const totalAssets = 48500000 + index * 1000000;
+    const totalLiabilities = 6400000 - index * 320000;
+
+    return {
+      id: makeId("net-worth", index),
+      month,
+      totalAssets,
+      totalLiabilities,
+      netWorth: totalAssets - totalLiabilities,
+      createdAt: now,
+      updatedAt: now,
+    };
+  });
+
   return {
     categories: DEFAULT_CATEGORIES.map((category) => ({ ...category })),
     transactions,
     budgets,
+    assetAccounts,
+    liabilityAccounts,
+    netWorthSnapshots,
   } satisfies {
     categories: Category[];
     transactions: Transaction[];
     budgets: Budget[];
+    assetAccounts: AssetAccount[];
+    liabilityAccounts: LiabilityAccount[];
+    netWorthSnapshots: NetWorthSnapshot[];
   };
 };

@@ -8,6 +8,7 @@ export type TransactionsStackParamList = {
 export type RootTabParamList = {
   Home: undefined;
   TransactionsTab: NavigatorScreenParams<TransactionsStackParamList>;
+  Assets: undefined;
   Categories: undefined;
   Budget: undefined;
   Statistics: undefined;

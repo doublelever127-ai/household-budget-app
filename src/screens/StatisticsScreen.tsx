@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { AppCard } from "../components/AppCard";
 import { EmptyState } from "../components/EmptyState";
 import { MonthSelector } from "../components/MonthSelector";
 import { Screen } from "../components/Screen";
@@ -58,6 +59,7 @@ export const StatisticsScreen = () => {
 
       {!hasStatisticsData ? (
         <EmptyState
+          icon="📊"
           title="통계로 볼 데이터가 없습니다."
           description="거래를 추가하면 월별 비교와 지출 추이를 확인할 수 있습니다."
         />
@@ -65,7 +67,7 @@ export const StatisticsScreen = () => {
         <>
 
           <SectionHeader title="월별 수입/지출 비교" />
-          <View style={styles.card}>
+          <AppCard style={styles.card}>
             {monthlyComparison.map((item) => (
               <ComparisonRow
                 expense={item.expense}
@@ -75,11 +77,11 @@ export const StatisticsScreen = () => {
                 monthLabel={formatKoreanShortMonth(item.month)}
               />
             ))}
-          </View>
+          </AppCard>
 
           <SectionHeader title="카테고리별 지출 비중" />
           {categorySummary.length ? (
-            <View style={styles.card}>
+            <AppCard style={styles.card}>
               {categorySummary.map((item) => (
                 <BarRow
                   color={item.color ?? colors.expense}
@@ -89,16 +91,17 @@ export const StatisticsScreen = () => {
                   value={item.rate}
                 />
               ))}
-            </View>
+            </AppCard>
           ) : (
             <EmptyState
+              icon="🧾"
               title="이번 달 지출 데이터가 없습니다."
               description="거래를 추가하면 카테고리별 비중을 볼 수 있습니다."
             />
           )}
 
           <SectionHeader title="최근 3개월 지출 추이" />
-          <View style={styles.card}>
+          <AppCard style={styles.card}>
             {recentTrend.map((item) => (
               <BarRow
                 color={colors.expense}
@@ -108,7 +111,7 @@ export const StatisticsScreen = () => {
                 value={(item.expense / maxTrendValue) * 100}
               />
             ))}
-          </View>
+          </AppCard>
         </>
       )}
     </Screen>
@@ -174,11 +177,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
   comparisonRow: {
     alignItems: "center",
@@ -212,13 +211,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   miniTrack: {
-    backgroundColor: colors.background,
-    borderRadius: radius.sm,
-    height: 8,
+    backgroundColor: colors.surfaceSoft,
+    borderRadius: radius.full,
+    height: 10,
     overflow: "hidden",
   },
   miniFill: {
-    borderRadius: radius.sm,
+    borderRadius: radius.full,
     height: "100%",
   },
   barRow: {
@@ -240,13 +239,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   track: {
-    backgroundColor: colors.background,
-    borderRadius: radius.sm,
-    height: 10,
+    backgroundColor: colors.surfaceSoft,
+    borderRadius: radius.full,
+    height: 12,
     overflow: "hidden",
   },
   fill: {
-    borderRadius: radius.sm,
+    borderRadius: radius.full,
     height: "100%",
   },
 });

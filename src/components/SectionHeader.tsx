@@ -29,12 +29,12 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 19,
+    fontWeight: "900",
   },
   action: {
     color: colors.primary,
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "900",
   },
 });

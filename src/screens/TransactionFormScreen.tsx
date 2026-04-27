@@ -140,6 +140,7 @@ export const TransactionFormScreen = ({ navigation, route }: TransactionFormProp
   const [memo, setMemo] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isPresetOpen, setIsPresetOpen] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: editingTransaction ? "거래 수정" : "거래 추가" });
@@ -238,19 +239,34 @@ export const TransactionFormScreen = ({ navigation, route }: TransactionFormProp
         />
       </Field>
 
-      <Field label="빠른 입력">
-        <View style={styles.presetGrid}>
-          {visiblePresets.map((preset) => (
-            <Pressable
-              accessibilityRole="button"
-              key={preset.label}
-              onPress={() => applyPreset(preset)}
-              style={styles.presetButton}
-            >
-              <Text style={styles.presetLabel}>{preset.label}</Text>
-            </Pressable>
-          ))}
+      <Field label="빠른 입력 예시">
+        <View style={styles.presetHeader}>
+          <Text style={styles.helperText}>
+            자주 쓰는 항목 예시입니다. 필요한 경우에만 열어 사용하세요.
+          </Text>
+          <Pressable
+            accessibilityLabel={`빠른 입력 예시 ${isPresetOpen ? "접기" : "열기"}`}
+            accessibilityRole="button"
+            onPress={() => setIsPresetOpen((current) => !current)}
+            style={styles.presetToggle}
+          >
+            <Text style={styles.presetToggleText}>{isPresetOpen ? "접기" : "열기"}</Text>
+          </Pressable>
         </View>
+        {isPresetOpen ? (
+          <View style={styles.presetGrid}>
+            {visiblePresets.map((preset) => (
+              <Pressable
+                accessibilityRole="button"
+                key={preset.label}
+                onPress={() => applyPreset(preset)}
+                style={styles.presetButton}
+              >
+                <Text style={styles.presetLabel}>{preset.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
       </Field>
 
       <Field label="금액">
@@ -369,7 +385,9 @@ interface CategoryButtonProps {
 
 const CategoryButton = ({ category, active, onPress }: CategoryButtonProps) => (
   <Pressable
+    accessibilityLabel={`${category.name}${active ? ", 선택됨" : ""}`}
     accessibilityRole="button"
+    accessibilityState={{ selected: active }}
     onPress={onPress}
     style={[styles.categoryButton, active && styles.activeCategoryButton]}
   >
@@ -398,8 +416,8 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.lg,
     borderWidth: 1,
     color: colors.text,
     fontSize: 16,
@@ -414,7 +432,7 @@ const styles = StyleSheet.create({
   },
   dateButton: {
     backgroundColor: colors.primarySoft,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     justifyContent: "center",
     minHeight: 36,
     paddingHorizontal: spacing.md,
@@ -432,6 +450,7 @@ const styles = StyleSheet.create({
   },
   helperText: {
     color: colors.mutedText,
+    flexShrink: 1,
     fontSize: 13,
     fontWeight: "700",
     marginTop: spacing.sm,
@@ -445,13 +464,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  presetHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm,
+    justifyContent: "space-between",
   },
   presetButton: {
     backgroundColor: colors.primarySoft,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     minHeight: 40,
     justifyContent: "center",
     paddingHorizontal: spacing.md,
+  },
+  presetToggle: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.lg,
+    justifyContent: "center",
+    minHeight: 36,
+    paddingHorizontal: spacing.md,
+  },
+  presetToggleText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: "800",
   },
   presetLabel: {
     color: colors.primary,
@@ -461,8 +499,8 @@ const styles = StyleSheet.create({
   categoryButton: {
     alignItems: "center",
     backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.lg,
     borderWidth: 1,
     flexDirection: "row",
     minHeight: 42,

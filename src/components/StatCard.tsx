@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, radius, spacing } from "../constants/theme";
+import { AppCard } from "./AppCard";
 
 interface StatCardProps {
   title: string;
@@ -16,36 +17,48 @@ const toneColors = {
   warning: colors.warning,
 };
 
+const toneBackgrounds = {
+  neutral: colors.primarySoft,
+  income: colors.incomeSoft,
+  expense: colors.expenseSoft,
+  warning: colors.warningSoft,
+};
+
 export const StatCard = ({ title, value, caption, tone = "neutral" }: StatCardProps) => (
-  <View style={styles.card}>
-    <Text style={styles.title}>{title}</Text>
+  <AppCard accentColor={toneColors[tone]} style={styles.card}>
+    <View style={[styles.badge, { backgroundColor: toneBackgrounds[tone] }]}>
+      <Text style={[styles.badgeText, { color: toneColors[tone] }]}>{title}</Text>
+    </View>
     <Text style={[styles.value, { color: toneColors[tone] }]}>{value}</Text>
     {caption ? <Text style={styles.caption}>{caption}</Text> : null}
-  </View>
+  </AppCard>
 );
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
     flex: 1,
-    minHeight: 96,
-    padding: spacing.md,
+    minHeight: 108,
+    paddingLeft: spacing.lg,
   },
-  title: {
-    color: colors.mutedText,
-    fontSize: 13,
+  badge: {
+    alignSelf: "flex-start",
+    borderRadius: radius.full,
     marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  badgeText: {
+    fontSize: 13,
+    fontWeight: "800",
   },
   value: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "800",
   },
   caption: {
     color: colors.mutedText,
     fontSize: 12,
+    lineHeight: 17,
     marginTop: spacing.xs,
   },
 });

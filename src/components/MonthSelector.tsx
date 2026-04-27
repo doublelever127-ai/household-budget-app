@@ -33,16 +33,19 @@ export const MonthSelector = ({ month, onChange }: MonthSelectorProps) => (
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.xl,
+    borderWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: spacing.lg,
+    padding: spacing.xs,
   },
   navButton: {
     alignItems: "center",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.full,
     height: 44,
     justifyContent: "center",
     width: 44,
@@ -56,5 +59,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 20,
     fontWeight: "800",
+    textAlign: "center",
   },
 });

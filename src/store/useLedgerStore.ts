@@ -3,13 +3,19 @@ import { create } from "zustand";
 import { DEFAULT_CATEGORIES } from "../constants/categories";
 import { storageService } from "../services/storageService";
 import {
+  AssetAccount,
+  AssetAccountInput,
   Budget,
   BudgetInput,
   Category,
   CategoryInput,
+  LiabilityAccount,
+  LiabilityAccountInput,
+  NetWorthSnapshot,
   Transaction,
   TransactionInput,
 } from "../types";
+import { getNetWorth, getTotalAssets, getTotalLiabilities } from "../utils/assets";
 import { getCurrentMonth } from "../utils/date";
 import { createSampleData } from "../utils/sampleData";
 
@@ -60,6 +66,9 @@ interface LedgerState {
   transactions: Transaction[];
   categories: Category[];
   budgets: Budget[];
+  assetAccounts: AssetAccount[];
+  liabilityAccounts: LiabilityAccount[];
+  netWorthSnapshots: NetWorthSnapshot[];
   deletedDefaultCategoryIds: string[];
   selectedMonth: string;
   isReady: boolean;
@@ -74,6 +83,13 @@ interface LedgerState {
   updateCategory: (id: string, input: CategoryInput) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
   saveBudget: (input: BudgetInput) => Promise<void>;
+  addAssetAccount: (input: AssetAccountInput) => Promise<void>;
+  updateAssetAccount: (id: string, input: AssetAccountInput) => Promise<void>;
+  deleteAssetAccount: (id: string) => Promise<void>;
+  addLiabilityAccount: (input: LiabilityAccountInput) => Promise<void>;
+  updateLiabilityAccount: (id: string, input: LiabilityAccountInput) => Promise<void>;
+  deleteLiabilityAccount: (id: string) => Promise<void>;
+  saveNetWorthSnapshot: (month: string) => Promise<void>;
   resetData: () => Promise<void>;
   seedSampleData: () => Promise<void>;
 }
@@ -82,6 +98,9 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
   transactions: [],
   categories: DEFAULT_CATEGORIES,
   budgets: [],
+  assetAccounts: [],
+  liabilityAccounts: [],
+  netWorthSnapshots: [],
   deletedDefaultCategoryIds: [],
   selectedMonth: getCurrentMonth(),
   isReady: false,
@@ -95,11 +114,22 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
   loadData: async () => {
     set({ isLoading: true, error: undefined });
     try {
-      const [transactions, categories, budgets, deletedDefaultCategoryIds] = await Promise.all([
+      const [
+        transactions,
+        categories,
+        budgets,
+        deletedDefaultCategoryIds,
+        assetAccounts,
+        liabilityAccounts,
+        netWorthSnapshots,
+      ] = await Promise.all([
         storageService.loadTransactions(),
         storageService.loadCategories(),
         storageService.loadBudgets(),
         storageService.loadDeletedDefaultCategoryIds(),
+        storageService.loadAssetAccounts(),
+        storageService.loadLiabilityAccounts(),
+        storageService.loadNetWorthSnapshots(),
       ]);
 
       const storedCategories = categories ?? [];
@@ -118,6 +148,9 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
         transactions: transactions ?? [],
         categories: nextCategories,
         budgets: budgets ?? [],
+        assetAccounts: assetAccounts ?? [],
+        liabilityAccounts: liabilityAccounts ?? [],
+        netWorthSnapshots: netWorthSnapshots ?? [],
         deletedDefaultCategoryIds: storedDeletedDefaultCategoryIds,
         isReady: true,
         isLoading: false,
@@ -239,6 +272,112 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
     set({ budgets });
   },
 
+  addAssetAccount: async (input) => {
+    const now = new Date().toISOString();
+    const assetAccount: AssetAccount = {
+      ...input,
+      id: createId("asset"),
+      name: input.name.trim(),
+      memo: normalizeOptionalText(input.memo),
+      createdAt: now,
+      updatedAt: now,
+    };
+    const assetAccounts = [...get().assetAccounts, assetAccount];
+    await storageService.saveAssetAccounts(assetAccounts);
+    set({ assetAccounts });
+  },
+
+  updateAssetAccount: async (id, input) => {
+    const now = new Date().toISOString();
+    const assetAccounts = get().assetAccounts.map((assetAccount) =>
+      assetAccount.id === id
+        ? {
+            ...assetAccount,
+            ...input,
+            name: input.name.trim(),
+            memo: normalizeOptionalText(input.memo),
+            updatedAt: now,
+          }
+        : assetAccount,
+    );
+    await storageService.saveAssetAccounts(assetAccounts);
+    set({ assetAccounts });
+  },
+
+  deleteAssetAccount: async (id) => {
+    const assetAccounts = get().assetAccounts.filter((assetAccount) => assetAccount.id !== id);
+    await storageService.saveAssetAccounts(assetAccounts);
+    set({ assetAccounts });
+  },
+
+  addLiabilityAccount: async (input) => {
+    const now = new Date().toISOString();
+    const liabilityAccount: LiabilityAccount = {
+      ...input,
+      id: createId("liability"),
+      name: input.name.trim(),
+      memo: normalizeOptionalText(input.memo),
+      createdAt: now,
+      updatedAt: now,
+    };
+    const liabilityAccounts = [...get().liabilityAccounts, liabilityAccount];
+    await storageService.saveLiabilityAccounts(liabilityAccounts);
+    set({ liabilityAccounts });
+  },
+
+  updateLiabilityAccount: async (id, input) => {
+    const now = new Date().toISOString();
+    const liabilityAccounts = get().liabilityAccounts.map((liabilityAccount) =>
+      liabilityAccount.id === id
+        ? {
+            ...liabilityAccount,
+            ...input,
+            name: input.name.trim(),
+            memo: normalizeOptionalText(input.memo),
+            updatedAt: now,
+          }
+        : liabilityAccount,
+    );
+    await storageService.saveLiabilityAccounts(liabilityAccounts);
+    set({ liabilityAccounts });
+  },
+
+  deleteLiabilityAccount: async (id) => {
+    const liabilityAccounts = get().liabilityAccounts.filter(
+      (liabilityAccount) => liabilityAccount.id !== id,
+    );
+    await storageService.saveLiabilityAccounts(liabilityAccounts);
+    set({ liabilityAccounts });
+  },
+
+  saveNetWorthSnapshot: async (month) => {
+    const now = new Date().toISOString();
+    const { assetAccounts, liabilityAccounts, netWorthSnapshots } = get();
+    const existing = netWorthSnapshots.find((snapshot) => snapshot.month === month);
+    const snapshot: NetWorthSnapshot = existing
+      ? {
+          ...existing,
+          totalAssets: getTotalAssets(assetAccounts),
+          totalLiabilities: getTotalLiabilities(liabilityAccounts),
+          netWorth: getNetWorth(assetAccounts, liabilityAccounts),
+          updatedAt: now,
+        }
+      : {
+          id: createId("net-worth"),
+          month,
+          totalAssets: getTotalAssets(assetAccounts),
+          totalLiabilities: getTotalLiabilities(liabilityAccounts),
+          netWorth: getNetWorth(assetAccounts, liabilityAccounts),
+          createdAt: now,
+          updatedAt: now,
+        };
+    const snapshots = existing
+      ? netWorthSnapshots.map((item) => (item.id === snapshot.id ? snapshot : item))
+      : [...netWorthSnapshots, snapshot];
+    await storageService.saveNetWorthSnapshots(snapshots);
+    set({ netWorthSnapshots: snapshots });
+  },
+
   resetData: async () => {
     await storageService.clearAll();
     await storageService.saveCategories(DEFAULT_CATEGORIES);
@@ -246,6 +385,9 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
       transactions: [],
       categories: DEFAULT_CATEGORIES,
       budgets: [],
+      assetAccounts: [],
+      liabilityAccounts: [],
+      netWorthSnapshots: [],
       deletedDefaultCategoryIds: [],
       error: undefined,
       isReady: true,
@@ -272,11 +414,17 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
       storageService.saveTransactions(transactions),
       storageService.saveCategories(categories),
       storageService.saveBudgets(budgets),
+      storageService.saveAssetAccounts(sampleData.assetAccounts),
+      storageService.saveLiabilityAccounts(sampleData.liabilityAccounts),
+      storageService.saveNetWorthSnapshots(sampleData.netWorthSnapshots),
     ]);
     set({
       transactions,
       categories,
       budgets,
+      assetAccounts: sampleData.assetAccounts,
+      liabilityAccounts: sampleData.liabilityAccounts,
+      netWorthSnapshots: sampleData.netWorthSnapshots,
       error: undefined,
       isReady: true,
     });

@@ -1,10 +1,11 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { enableScreens } from "react-native-screens";
 
-import { colors } from "../constants/theme";
+import { colors, radius } from "../constants/theme";
+import { AssetScreen } from "../screens/AssetScreen";
 import { BudgetScreen } from "../screens/BudgetScreen";
 import { CategoryScreen } from "../screens/CategoryScreen";
 import { HomeScreen } from "../screens/HomeScreen";
@@ -40,6 +41,16 @@ const TransactionsNavigator = () => (
   </TransactionStack.Navigator>
 );
 
+const tabIcons: Record<keyof RootTabParamList, string> = {
+  Home: "🏠",
+  TransactionsTab: "🧾",
+  Assets: "💎",
+  Categories: "🏷",
+  Budget: "💰",
+  Statistics: "📊",
+  Settings: "⚙️",
+};
+
 export const AppNavigator = () => (
   <NavigationContainer>
     <Tab.Navigator
@@ -49,40 +60,105 @@ export const AppNavigator = () => (
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.mutedText,
-        tabBarIcon: ({ color, focused }) => (
-          <View
-            style={[
-              styles.tabIndicator,
-              { borderColor: color },
-              focused && { backgroundColor: color },
-            ]}
-          />
+        tabBarIcon: ({ focused }) => (
+          <View style={[styles.iconPill, focused && styles.activeIconPill]}>
+            <Text style={styles.tabIcon}>{tabIcons.Home}</Text>
+          </View>
         ),
-        tabBarIconStyle: { marginTop: 6 },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: "700", marginBottom: 6 },
+        tabBarIconStyle: { marginTop: 5 },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: "800", marginBottom: 7 },
         tabBarStyle: {
-          borderTopColor: colors.border,
-          height: 76,
+          backgroundColor: colors.surface,
+          borderTopColor: colors.borderSoft,
+          height: 82,
           paddingBottom: 10,
           paddingTop: 8,
         },
       }}
     >
-      <Tab.Screen component={HomeScreen} name="Home" options={{ title: "홈" }} />
-      <Tab.Screen component={TransactionsNavigator} name="TransactionsTab" options={{ title: "거래" }} />
-      <Tab.Screen component={CategoryScreen} name="Categories" options={{ title: "카테고리" }} />
-      <Tab.Screen component={BudgetScreen} name="Budget" options={{ title: "예산" }} />
-      <Tab.Screen component={StatisticsScreen} name="Statistics" options={{ title: "통계" }} />
-      <Tab.Screen component={SettingsScreen} name="Settings" options={{ title: "설정" }} />
+      <Tab.Screen
+        component={HomeScreen}
+        name="Home"
+        options={{
+          title: "홈",
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Home" />,
+        }}
+      />
+      <Tab.Screen
+        component={TransactionsNavigator}
+        name="TransactionsTab"
+        options={{
+          title: "거래",
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="TransactionsTab" />,
+        }}
+      />
+      <Tab.Screen
+        component={CategoryScreen}
+        name="Categories"
+        options={{
+          title: "카테고리",
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Categories" />,
+        }}
+      />
+      <Tab.Screen
+        component={AssetScreen}
+        name="Assets"
+        options={{
+          title: "자산",
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Assets" />,
+        }}
+      />
+      <Tab.Screen
+        component={BudgetScreen}
+        name="Budget"
+        options={{
+          title: "예산",
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Budget" />,
+        }}
+      />
+      <Tab.Screen
+        component={StatisticsScreen}
+        name="Statistics"
+        options={{
+          title: "통계",
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Statistics" />,
+        }}
+      />
+      <Tab.Screen
+        component={SettingsScreen}
+        name="Settings"
+        options={{
+          title: "설정",
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Settings" />,
+        }}
+      />
     </Tab.Navigator>
   </NavigationContainer>
 );
 
+interface TabIconProps {
+  focused: boolean;
+  name: keyof RootTabParamList;
+}
+
+const TabIcon = ({ focused, name }: TabIconProps) => (
+  <View style={[styles.iconPill, focused && styles.activeIconPill]}>
+    <Text style={styles.tabIcon}>{tabIcons[name]}</Text>
+  </View>
+);
+
 const styles = StyleSheet.create({
-  tabIndicator: {
-    borderRadius: 5,
-    borderWidth: 2,
-    height: 10,
-    width: 10,
+  iconPill: {
+    alignItems: "center",
+    borderRadius: radius.full,
+    height: 30,
+    justifyContent: "center",
+    width: 44,
+  },
+  activeIconPill: {
+    backgroundColor: colors.primarySoft,
+  },
+  tabIcon: {
+    fontSize: 17,
   },
 });

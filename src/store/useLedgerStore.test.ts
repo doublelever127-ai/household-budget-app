@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_CATEGORIES } from "../constants/categories";
-import { Budget, Category, Transaction } from "../types";
+import {
+  AssetAccount,
+  Budget,
+  Category,
+  LiabilityAccount,
+  NetWorthSnapshot,
+  Transaction,
+} from "../types";
 import {
   CATEGORY_DUPLICATE_ERROR,
   useLedgerStore,
@@ -16,6 +23,12 @@ const storageMocks = vi.hoisted(() => ({
   saveBudgets: vi.fn<(budgets: Budget[]) => Promise<void>>(),
   loadDeletedDefaultCategoryIds: vi.fn<() => Promise<string[] | null>>(),
   saveDeletedDefaultCategoryIds: vi.fn<(categoryIds: string[]) => Promise<void>>(),
+  loadAssetAccounts: vi.fn<() => Promise<AssetAccount[] | null>>(),
+  saveAssetAccounts: vi.fn<(assetAccounts: AssetAccount[]) => Promise<void>>(),
+  loadLiabilityAccounts: vi.fn<() => Promise<LiabilityAccount[] | null>>(),
+  saveLiabilityAccounts: vi.fn<(liabilityAccounts: LiabilityAccount[]) => Promise<void>>(),
+  loadNetWorthSnapshots: vi.fn<() => Promise<NetWorthSnapshot[] | null>>(),
+  saveNetWorthSnapshots: vi.fn<(snapshots: NetWorthSnapshot[]) => Promise<void>>(),
   clearAll: vi.fn<() => Promise<void>>(),
 }));
 
@@ -28,6 +41,9 @@ const resetStore = () => {
     transactions: [],
     categories: DEFAULT_CATEGORIES,
     budgets: [],
+    assetAccounts: [],
+    liabilityAccounts: [],
+    netWorthSnapshots: [],
     deletedDefaultCategoryIds: [],
     selectedMonth: "2026-04",
     isReady: false,
@@ -43,10 +59,16 @@ describe("ledger store", () => {
     storageMocks.loadCategories.mockResolvedValue(null);
     storageMocks.loadBudgets.mockResolvedValue(null);
     storageMocks.loadDeletedDefaultCategoryIds.mockResolvedValue(null);
+    storageMocks.loadAssetAccounts.mockResolvedValue(null);
+    storageMocks.loadLiabilityAccounts.mockResolvedValue(null);
+    storageMocks.loadNetWorthSnapshots.mockResolvedValue(null);
     storageMocks.saveTransactions.mockResolvedValue();
     storageMocks.saveCategories.mockResolvedValue();
     storageMocks.saveBudgets.mockResolvedValue();
     storageMocks.saveDeletedDefaultCategoryIds.mockResolvedValue();
+    storageMocks.saveAssetAccounts.mockResolvedValue();
+    storageMocks.saveLiabilityAccounts.mockResolvedValue();
+    storageMocks.saveNetWorthSnapshots.mockResolvedValue();
     storageMocks.clearAll.mockResolvedValue();
     resetStore();
   });
@@ -145,5 +167,53 @@ describe("ledger store", () => {
         .getState()
         .categories.some((category) => category.id === "expense-food"),
     ).toBe(false);
+  });
+
+  it("자산 계좌를 추가하고 저장한다", async () => {
+    await useLedgerStore.getState().addAssetAccount({
+      name: " 입출금통장 ",
+      type: "bank",
+      balance: 1500000,
+      memo: "생활비",
+    });
+
+    expect(useLedgerStore.getState().assetAccounts).toHaveLength(1);
+    expect(useLedgerStore.getState().assetAccounts[0].name).toBe("입출금통장");
+    expect(storageMocks.saveAssetAccounts).toHaveBeenCalledOnce();
+  });
+
+  it("현재 자산과 부채 기준으로 순자산 스냅샷을 저장한다", async () => {
+    useLedgerStore.setState({
+      assetAccounts: [
+        {
+          id: "asset-1",
+          name: "통장",
+          type: "bank",
+          balance: 3000000,
+          createdAt: "2026-04-01T00:00:00.000Z",
+          updatedAt: "2026-04-01T00:00:00.000Z",
+        },
+      ],
+      liabilityAccounts: [
+        {
+          id: "liability-1",
+          name: "카드",
+          type: "creditCard",
+          balance: 500000,
+          createdAt: "2026-04-01T00:00:00.000Z",
+          updatedAt: "2026-04-01T00:00:00.000Z",
+        },
+      ],
+    });
+
+    await useLedgerStore.getState().saveNetWorthSnapshot("2026-04");
+
+    expect(useLedgerStore.getState().netWorthSnapshots[0]).toMatchObject({
+      month: "2026-04",
+      totalAssets: 3000000,
+      totalLiabilities: 500000,
+      netWorth: 2500000,
+    });
+    expect(storageMocks.saveNetWorthSnapshots).toHaveBeenCalledOnce();
   });
 });

@@ -30,13 +30,13 @@ export const ProgressBar = ({ value, tone = "primary" }: ProgressBarProps) => (
 
 const styles = StyleSheet.create({
   track: {
-    backgroundColor: colors.border,
-    borderRadius: radius.sm,
-    height: 8,
+    backgroundColor: colors.borderSoft,
+    borderRadius: radius.full,
+    height: 10,
     overflow: "hidden",
   },
   fill: {
-    borderRadius: radius.sm,
+    borderRadius: radius.full,
     height: "100%",
   },
 });

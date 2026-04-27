@@ -118,9 +118,18 @@ export const TransactionListScreen = () => {
     });
   }, [categoryFilter, categoryMap, month, searchQuery, transactions, typeFilter]);
 
+  const hasActiveFilters =
+    typeFilter !== "all" || categoryFilter !== "all" || Boolean(searchQuery.trim());
+
   const handleTypeChange = (value: TransactionFilterType) => {
     setTypeFilter(value);
     setCategoryFilter("all");
+  };
+
+  const resetFilters = () => {
+    setTypeFilter("all");
+    setCategoryFilter("all");
+    setSearchQuery("");
   };
 
   const confirmDelete = (id: string) => {
@@ -181,8 +190,9 @@ export const TransactionListScreen = () => {
 
       <View style={styles.searchBox}>
         <TextInput
+          accessibilityLabel="거래 검색"
           onChangeText={setSearchQuery}
-          placeholder="메모, 카테고리, 결제수단 검색"
+          placeholder="메모, 카테고리, 결제수단, 금액 검색"
           placeholderTextColor={colors.mutedText}
           style={styles.searchInput}
           value={searchQuery}
@@ -194,7 +204,20 @@ export const TransactionListScreen = () => {
             onPress={() => setSearchQuery("")}
             style={styles.clearButton}
           >
-            <Text style={styles.clearButtonText}>지우기</Text>
+            <Text style={styles.clearButtonText}>검색 초기화</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      <View style={styles.filterSummaryRow}>
+        <Text style={styles.resultText}>검색 결과 {visibleTransactions.length}건</Text>
+        {hasActiveFilters ? (
+          <Pressable
+            accessibilityLabel="필터 초기화"
+            accessibilityRole="button"
+            onPress={resetFilters}
+            style={styles.resetFilterButton}
+          >
+            <Text style={styles.resetFilterText}>필터 초기화</Text>
           </Pressable>
         ) : null}
       </View>
@@ -235,7 +258,9 @@ interface CategoryChipProps {
 
 const CategoryChip = ({ label, active, onPress, category }: CategoryChipProps) => (
   <Pressable
+    accessibilityLabel={`${label}${active ? ", 선택됨" : ""}`}
     accessibilityRole="button"
+    accessibilityState={{ selected: active }}
     onPress={onPress}
     style={[styles.chip, active && styles.activeChip]}
   >
@@ -252,7 +277,7 @@ const styles = StyleSheet.create({
   chip: {
     alignItems: "center",
     backgroundColor: colors.surface,
-    borderColor: colors.border,
+    borderColor: colors.borderSoft,
     borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: "row",
@@ -288,8 +313,8 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.lg,
     borderWidth: 1,
     color: colors.text,
     flex: 1,
@@ -300,7 +325,7 @@ const styles = StyleSheet.create({
   clearButton: {
     alignItems: "center",
     backgroundColor: colors.primarySoft,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     justifyContent: "center",
     minHeight: 44,
     paddingHorizontal: spacing.md,
@@ -309,6 +334,29 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 13,
     fontWeight: "800",
+  },
+  filterSummaryRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+  },
+  resetFilterButton: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.md,
+    justifyContent: "center",
+    minHeight: 36,
+    paddingHorizontal: spacing.md,
+  },
+  resetFilterText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  resultText: {
+    color: colors.mutedText,
+    fontSize: 13,
+    fontWeight: "700",
   },
   listContent: {
     paddingBottom: spacing.xl,
