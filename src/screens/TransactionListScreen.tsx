@@ -1,0 +1,316 @@
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useNavigation } from "@react-navigation/native";
+import { useMemo, useState } from "react";
+import {
+  Alert,
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+
+import { EmptyState } from "../components/EmptyState";
+import { MonthSelector } from "../components/MonthSelector";
+import { PrimaryButton } from "../components/PrimaryButton";
+import { Screen } from "../components/Screen";
+import { SegmentedControl } from "../components/SegmentedControl";
+import { TransactionItem } from "../components/TransactionItem";
+import { DEFAULT_CATEGORIES } from "../constants/categories";
+import { colors, radius, spacing } from "../constants/theme";
+import { TransactionsStackParamList } from "../navigation/types";
+import { useLedgerStore } from "../store/useLedgerStore";
+import { Category, Transaction, TransactionFilterType } from "../types";
+import { getMonthlyTransactions } from "../utils/calculations";
+
+type TransactionListNavigation = NativeStackNavigationProp<
+  TransactionsStackParamList,
+  "TransactionList"
+>;
+
+const typeOptions = [
+  { label: "전체", value: "all" },
+  { label: "수입", value: "income" },
+  { label: "지출", value: "expense" },
+] as const;
+
+const getCategoryFilterLabel = (
+  category: Category,
+  typeFilter: TransactionFilterType,
+) => {
+  if (typeFilter !== "all") {
+    return category.name;
+  }
+
+  return `${category.type === "income" ? "수입" : "지출"} ${category.name}`;
+};
+
+const categoryOrder = new Map(
+  DEFAULT_CATEGORIES.map((category, index) => [category.id, index]),
+);
+
+const sortCategoriesForFilter = (categories: Category[]) =>
+  [...categories].sort((a, b) => {
+    const typeCompare =
+      (a.type === "expense" ? 0 : 1) - (b.type === "expense" ? 0 : 1);
+    if (typeCompare !== 0) {
+      return typeCompare;
+    }
+
+    return (categoryOrder.get(a.id) ?? 999) - (categoryOrder.get(b.id) ?? 999);
+  });
+
+export const TransactionListScreen = () => {
+  const navigation = useNavigation<TransactionListNavigation>();
+  const {
+    transactions,
+    categories,
+    deleteTransaction,
+    selectedMonth,
+    setSelectedMonth,
+  } = useLedgerStore();
+  const month = selectedMonth;
+  const [typeFilter, setTypeFilter] = useState<TransactionFilterType>("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredCategories = useMemo(() => {
+    if (typeFilter === "all") {
+      return sortCategoriesForFilter(categories);
+    }
+
+    return sortCategoriesForFilter(
+      categories.filter((category) => category.type === typeFilter),
+    );
+  }, [categories, typeFilter]);
+  const categoryMap = useMemo(
+    () => new Map(categories.map((category) => [category.id, category])),
+    [categories],
+  );
+
+  const visibleTransactions = useMemo(() => {
+    const monthly = getMonthlyTransactions(transactions, month);
+    const normalizedSearchQuery = searchQuery.trim().toLocaleLowerCase("ko-KR");
+
+    return monthly.filter((transaction) => {
+      const matchesType = typeFilter === "all" || transaction.type === typeFilter;
+      const matchesCategory =
+        categoryFilter === "all" || transaction.categoryId === categoryFilter;
+      const categoryName = categoryMap.get(transaction.categoryId)?.name ?? "삭제된 카테고리";
+      const searchableText = [
+        categoryName,
+        transaction.memo,
+        transaction.paymentMethod,
+        transaction.type === "income" ? "수입" : "지출",
+        String(transaction.amount),
+        transaction.amount.toLocaleString("ko-KR"),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLocaleLowerCase("ko-KR");
+
+      const matchesSearch =
+        !normalizedSearchQuery || searchableText.includes(normalizedSearchQuery);
+
+      return matchesType && matchesCategory && matchesSearch;
+    });
+  }, [categoryFilter, categoryMap, month, searchQuery, transactions, typeFilter]);
+
+  const handleTypeChange = (value: TransactionFilterType) => {
+    setTypeFilter(value);
+    setCategoryFilter("all");
+  };
+
+  const confirmDelete = (id: string) => {
+    Alert.alert("거래 삭제", "이 거래 내역을 삭제할까요?", [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: () => {
+          void deleteTransaction(id);
+        },
+      },
+    ]);
+  };
+
+  const openForm = (transactionId?: string) => {
+    navigation.navigate("TransactionForm", transactionId ? { transactionId } : undefined);
+  };
+
+  const renderTransaction = ({ item }: { item: Transaction }) => (
+    <TransactionItem
+      categories={categories}
+      onDelete={() => confirmDelete(item.id)}
+      onEdit={() => openForm(item.id)}
+      transaction={item}
+    />
+  );
+
+  const header = (
+    <View>
+      <MonthSelector month={month} onChange={setSelectedMonth} />
+      <SegmentedControl
+        onChange={handleTypeChange}
+        options={[...typeOptions]}
+        value={typeFilter}
+      />
+
+      <ScrollView
+        contentContainerStyle={styles.categoryRow}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+      >
+        <CategoryChip
+          active={categoryFilter === "all"}
+          label="전체 카테고리"
+          onPress={() => setCategoryFilter("all")}
+        />
+        {filteredCategories.map((category) => (
+          <CategoryChip
+            active={categoryFilter === category.id}
+            category={category}
+            key={category.id}
+            label={getCategoryFilterLabel(category, typeFilter)}
+            onPress={() => setCategoryFilter(category.id)}
+          />
+        ))}
+      </ScrollView>
+
+      <View style={styles.searchBox}>
+        <TextInput
+          onChangeText={setSearchQuery}
+          placeholder="메모, 카테고리, 결제수단 검색"
+          placeholderTextColor={colors.mutedText}
+          style={styles.searchInput}
+          value={searchQuery}
+        />
+        {searchQuery ? (
+          <Pressable
+            accessibilityLabel="검색어 지우기"
+            accessibilityRole="button"
+            onPress={() => setSearchQuery("")}
+            style={styles.clearButton}
+          >
+            <Text style={styles.clearButtonText}>지우기</Text>
+          </Pressable>
+        ) : null}
+      </View>
+
+      <PrimaryButton label="거래 추가" onPress={() => openForm()} style={styles.addButton} />
+    </View>
+  );
+
+  return (
+    <Screen scroll={false}>
+      <FlatList
+        ListEmptyComponent={
+          <EmptyState
+            actionLabel="첫 거래 추가"
+            description="필터나 검색어를 바꾸거나 새 거래를 등록해 보세요."
+            onActionPress={() => openForm()}
+            title="아직 등록된 거래가 없습니다."
+          />
+        }
+        ListHeaderComponent={header}
+        contentContainerStyle={styles.listContent}
+        data={visibleTransactions}
+        keyExtractor={(item) => item.id}
+        keyboardShouldPersistTaps="handled"
+        renderItem={renderTransaction}
+        showsVerticalScrollIndicator={false}
+      />
+    </Screen>
+  );
+};
+
+interface CategoryChipProps {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+  category?: Category;
+}
+
+const CategoryChip = ({ label, active, onPress, category }: CategoryChipProps) => (
+  <Pressable
+    accessibilityRole="button"
+    onPress={onPress}
+    style={[styles.chip, active && styles.activeChip]}
+  >
+    {category?.color ? <View style={[styles.chipDot, { backgroundColor: category.color }]} /> : null}
+    <Text style={[styles.chipText, active && styles.activeChipText]}>{label}</Text>
+  </Pressable>
+);
+
+const styles = StyleSheet.create({
+  categoryRow: {
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  chip: {
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    flexDirection: "row",
+    minHeight: 40,
+    paddingHorizontal: spacing.md,
+  },
+  activeChip: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  chipDot: {
+    borderRadius: 5,
+    height: 10,
+    marginRight: spacing.xs,
+    width: 10,
+  },
+  chipText: {
+    color: colors.mutedText,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  activeChipText: {
+    color: "#FFFFFF",
+  },
+  addButton: {
+    marginBottom: spacing.lg,
+  },
+  searchBox: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  searchInput: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    color: colors.text,
+    flex: 1,
+    fontSize: 15,
+    minHeight: 44,
+    paddingHorizontal: spacing.md,
+  },
+  clearButton: {
+    alignItems: "center",
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.md,
+    justifyContent: "center",
+    minHeight: 44,
+    paddingHorizontal: spacing.md,
+  },
+  clearButtonText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  listContent: {
+    paddingBottom: spacing.xl,
+  },
+});
