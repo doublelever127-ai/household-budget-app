@@ -10,6 +10,12 @@ describe("format utils", () => {
     expect(formatAmountInput("1,234,567")).toBe("1,234,567");
   });
 
+  it("입력 중 어긋난 콤마를 자동으로 다시 정리한다", () => {
+    expect(formatAmountInput("1,2000")).toBe("12,000");
+    expect(formatAmountInput("1,20000000")).toBe("120,000,000");
+    expect(formatAmountInput("12,34")).toBe("1,234");
+  });
+
   it("잘못된 금액 입력은 다른 숫자로 조용히 바꾸지 않는다", () => {
     expect(formatAmountInput("-100")).toBe("-100");
     expect(formatAmountInput("12.5")).toBe("12.5");
@@ -21,10 +27,22 @@ describe("format utils", () => {
   it("올바른 금액 입력을 숫자로 파싱한다", () => {
     expect(parseAmountInput("1000")).toBe(1000);
     expect(parseAmountInput("1,000")).toBe(1000);
+    expect(parseAmountInput("1,20000000")).toBe(120000000);
   });
 
   it("잘못된 금액 입력을 거부한다", () => {
-    const invalidInputs = ["-100", "+100", "12.5", "100원", "₩1000", "abc100", "1e5", "", "0"];
+    const invalidInputs = [
+      "-100",
+      "+100",
+      "12.5",
+      "100원",
+      "₩1000",
+      "abc100",
+      "1e5",
+      "",
+      "0",
+      ",,,",
+    ];
 
     invalidInputs.forEach((input) => {
       expect(validateAmountInput(input).valid).toBe(false);

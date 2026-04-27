@@ -9,8 +9,7 @@ export const formatSignedCurrency = (amount: number, type: TransactionType) =>
 export const formatPercent = (value: number) => `${value.toFixed(value % 1 === 0 ? 0 : 1)}%`;
 
 const plainIntegerPattern = /^\d+$/;
-const commaIntegerPattern = /^\d{1,3}(,\d{3})+$/;
-const validAmountPattern = /^(?:\d+|\d{1,3}(?:,\d{3})+)$/;
+const digitsAndCommasPattern = /^[\d,]+$/;
 
 export const formatAmountInput = (value: string) => {
   const trimmed = value.trim();
@@ -19,11 +18,17 @@ export const formatAmountInput = (value: string) => {
     return "";
   }
 
-  if (!plainIntegerPattern.test(trimmed) && !commaIntegerPattern.test(trimmed)) {
+  if (!digitsAndCommasPattern.test(trimmed)) {
     return value;
   }
 
-  return Number(trimmed.replace(/,/g, "")).toLocaleString("ko-KR");
+  const digitsOnly = trimmed.replace(/,/g, "");
+
+  if (!plainIntegerPattern.test(digitsOnly)) {
+    return value;
+  }
+
+  return Number(digitsOnly).toLocaleString("ko-KR");
 };
 
 export type AmountInputValidationResult =
@@ -37,14 +42,23 @@ export const validateAmountInput = (value: string): AmountInputValidationResult 
     return { valid: false, error: "금액을 입력해 주세요." };
   }
 
-  if (!validAmountPattern.test(trimmed)) {
+  if (!digitsAndCommasPattern.test(trimmed)) {
     return {
       valid: false,
-      error: "금액에는 숫자와 천 단위 콤마만 입력할 수 있습니다.",
+      error: "금액에는 숫자와 콤마만 입력할 수 있습니다.",
     };
   }
 
-  const amount = Number(trimmed.replace(/,/g, ""));
+  const digitsOnly = trimmed.replace(/,/g, "");
+
+  if (!plainIntegerPattern.test(digitsOnly)) {
+    return {
+      valid: false,
+      error: "금액은 0보다 큰 정수로 입력해 주세요.",
+    };
+  }
+
+  const amount = Number(digitsOnly);
 
   if (!Number.isSafeInteger(amount) || amount <= 0) {
     return { valid: false, error: "금액은 0보다 큰 정수로 입력해 주세요." };
