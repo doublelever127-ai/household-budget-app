@@ -8,6 +8,7 @@ import { Screen } from "../components/Screen";
 import { SectionHeader } from "../components/SectionHeader";
 import { colors, radius, spacing } from "../constants/theme";
 import { useLedgerStore } from "../store/useLedgerStore";
+import { getSavingsRate } from "../utils/assets";
 import {
   getCategoryExpenseSummary,
   getMonthlyExpense,
@@ -41,6 +42,42 @@ export const StatisticsScreen = () => {
     () => getCategoryExpenseSummary(transactions, categories, month),
     [categories, month, transactions],
   );
+  const currentIncome = getMonthlyIncome(transactions, month);
+  const currentExpense = getMonthlyExpense(transactions, month);
+  const savingsRate = getSavingsRate(currentIncome, currentExpense);
+  const previousMonth = getPreviousMonths(month, 2)[0];
+  const previousCategorySummary = useMemo(
+    () => getCategoryExpenseSummary(transactions, categories, previousMonth),
+    [categories, previousMonth, transactions],
+  );
+  const topCategory = categorySummary[0];
+  const increasedCategory = categorySummary
+    .map((item) => {
+      const previous = previousCategorySummary.find(
+        (previousItem) => previousItem.categoryId === item.categoryId,
+      );
+      return {
+        name: item.categoryName,
+        diff: item.total - (previous?.total ?? 0),
+      };
+    })
+    .filter((item) => item.diff > 0)
+    .sort((a, b) => b.diff - a.diff)[0];
+  const highestTrendMonth = [...recentTrend].sort((a, b) => b.expense - a.expense)[0];
+  const insights = [
+    topCategory
+      ? `이번 달 가장 많이 쓴 카테고리는 ${topCategory.categoryName}입니다.`
+      : "이번 달 지출 카테고리 데이터가 아직 없습니다.",
+    increasedCategory
+      ? `지난달보다 ${increasedCategory.name} 지출이 ${formatCurrency(increasedCategory.diff)} 늘었습니다.`
+      : "지난달보다 뚜렷하게 늘어난 지출 카테고리는 아직 없습니다.",
+    currentIncome > 0
+      ? `이번 달 수입의 ${formatPercent(savingsRate)}를 남겼습니다.`
+      : "수입 거래를 추가하면 저축률을 확인할 수 있습니다.",
+    highestTrendMonth?.expense > 0
+      ? `최근 3개월 중 ${formatKoreanShortMonth(highestTrendMonth.month)} 지출이 가장 높습니다.`
+      : "최근 3개월 지출 추이를 보려면 거래를 더 기록해 보세요.",
+  ];
 
   const maxMonthlyValue = Math.max(
     1,
@@ -54,17 +91,25 @@ export const StatisticsScreen = () => {
 
   return (
     <Screen>
-      <Text style={styles.title}>통계</Text>
+      <Text style={styles.title}>분석</Text>
       <MonthSelector month={month} onChange={setSelectedMonth} />
 
       {!hasStatisticsData ? (
         <EmptyState
           icon="📊"
-          title="통계로 볼 데이터가 없습니다."
+          title="분석할 데이터가 없습니다."
           description="거래를 추가하면 월별 비교와 지출 추이를 확인할 수 있습니다."
         />
       ) : (
         <>
+          <SectionHeader title="이번 달 해석" />
+          <AppCard style={styles.card}>
+            {insights.map((insight) => (
+              <Text key={insight} style={styles.insightText}>
+                {insight}
+              </Text>
+            ))}
+          </AppCard>
 
           <SectionHeader title="월별 수입/지출 비교" />
           <AppCard style={styles.card}>
@@ -177,6 +222,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   card: {
+    marginBottom: spacing.sm,
+  },
+  insightText: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 21,
     marginBottom: spacing.sm,
   },
   comparisonRow: {

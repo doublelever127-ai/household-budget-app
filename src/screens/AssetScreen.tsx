@@ -91,6 +91,7 @@ export const AssetScreen = () => {
   const [assetBalance, setAssetBalance] = useState("");
   const [assetMemo, setAssetMemo] = useState("");
   const [editingAssetId, setEditingAssetId] = useState<string | undefined>();
+  const [isAssetFormOpen, setIsAssetFormOpen] = useState(false);
 
   const [liabilityName, setLiabilityName] = useState("");
   const [liabilityType, setLiabilityType] = useState<LiabilityType>("creditCard");
@@ -98,6 +99,7 @@ export const AssetScreen = () => {
   const [liabilityInterestRate, setLiabilityInterestRate] = useState("");
   const [liabilityMemo, setLiabilityMemo] = useState("");
   const [editingLiabilityId, setEditingLiabilityId] = useState<string | undefined>();
+  const [isLiabilityFormOpen, setIsLiabilityFormOpen] = useState(false);
 
   const totalAssets = useMemo(() => getTotalAssets(assetAccounts), [assetAccounts]);
   const totalLiabilities = useMemo(
@@ -137,6 +139,7 @@ export const AssetScreen = () => {
     setAssetBalance("");
     setAssetMemo("");
     setEditingAssetId(undefined);
+    setIsAssetFormOpen(false);
   };
 
   const resetLiabilityForm = () => {
@@ -146,6 +149,7 @@ export const AssetScreen = () => {
     setLiabilityInterestRate("");
     setLiabilityMemo("");
     setEditingLiabilityId(undefined);
+    setIsLiabilityFormOpen(false);
   };
 
   const handleAssetSave = async () => {
@@ -271,6 +275,7 @@ export const AssetScreen = () => {
     setAssetType(account.type);
     setAssetBalance(formatAmountInput(String(account.balance)));
     setAssetMemo(account.memo ?? "");
+    setIsAssetFormOpen(true);
   };
 
   const editLiability = (account: LiabilityAccount) => {
@@ -280,6 +285,7 @@ export const AssetScreen = () => {
     setLiabilityBalance(formatAmountInput(String(account.balance)));
     setLiabilityInterestRate(account.interestRate?.toString() ?? "");
     setLiabilityMemo(account.memo ?? "");
+    setIsLiabilityFormOpen(true);
   };
 
   return (
@@ -336,29 +342,65 @@ export const AssetScreen = () => {
         )}
       </AppCard>
 
-      <SectionHeader title="자산 추가" />
-      <AppCard>
-        <AccountForm
-          amount={assetBalance}
-          amountLabel="자산 금액"
-          amountPlaceholder="금액 예: 1000000"
-          memo={assetMemo}
-          memoLabel="자산 메모"
-          name={assetName}
-          nameLabel="자산 이름"
-          namePlaceholder="이름 예: 입출금통장"
-          onAmountChange={(value) => setAssetBalance(formatAmountInput(value))}
-          onCancel={editingAssetId ? resetAssetForm : undefined}
-          onMemoChange={setAssetMemo}
-          onNameChange={setAssetName}
-          onSave={handleAssetSave}
-          saveLabel={editingAssetId ? "자산 수정" : "자산 추가"}
-          typeLabelPrefix="자산 유형"
-          typeOptions={assetTypeOptions}
-          selectedType={assetType}
-          onTypeChange={setAssetType}
-        />
+      <AppCard style={styles.entryCard}>
+        <Text style={styles.cardTitle}>자산 정보 입력</Text>
+        <Text style={styles.caption}>
+          자산과 부채를 입력하면 순자산과 현금성 자산을 더 정확하게 볼 수 있습니다.
+        </Text>
+        <View style={styles.entryButtonRow}>
+          <PrimaryButton
+            label={isAssetFormOpen ? "자산 입력 접기" : "+ 자산 추가"}
+            onPress={() => {
+              if (isAssetFormOpen) {
+                resetAssetForm();
+              } else {
+                setIsAssetFormOpen(true);
+              }
+            }}
+            style={styles.entryButton}
+          />
+          <PrimaryButton
+            label={isLiabilityFormOpen ? "부채 입력 접기" : "+ 부채 추가"}
+            onPress={() => {
+              if (isLiabilityFormOpen) {
+                resetLiabilityForm();
+              } else {
+                setIsLiabilityFormOpen(true);
+              }
+            }}
+            style={styles.entryButton}
+            variant="secondary"
+          />
+        </View>
       </AppCard>
+
+      {isAssetFormOpen ? (
+        <>
+          <SectionHeader title={editingAssetId ? "자산 수정" : "자산 추가"} />
+          <AppCard>
+            <AccountForm
+              amount={assetBalance}
+              amountLabel="자산 금액"
+              amountPlaceholder="금액 예: 1000000"
+              memo={assetMemo}
+              memoLabel="자산 메모"
+              name={assetName}
+              nameLabel="자산 이름"
+              namePlaceholder="이름 예: 입출금통장"
+              onAmountChange={(value) => setAssetBalance(formatAmountInput(value))}
+              onCancel={resetAssetForm}
+              onMemoChange={setAssetMemo}
+              onNameChange={setAssetName}
+              onSave={handleAssetSave}
+              saveLabel={editingAssetId ? "자산 수정" : "자산 추가"}
+              typeLabelPrefix="자산 유형"
+              typeOptions={assetTypeOptions}
+              selectedType={assetType}
+              onTypeChange={setAssetType}
+            />
+          </AppCard>
+        </>
+      ) : null}
 
       <SectionHeader title="자산 목록" />
       {assetAccounts.length ? (
@@ -379,43 +421,49 @@ export const AssetScreen = () => {
           icon="💰"
           title="등록된 자산이 없습니다."
           description="입출금통장, 적금, 투자 자산 등을 직접 입력해 보세요."
+          actionLabel="자산 입력하기"
+          onActionPress={() => setIsAssetFormOpen(true)}
         />
       )}
 
-      <SectionHeader title="부채 추가" />
-      <AppCard>
-        <AccountForm
-          amount={liabilityBalance}
-          amountLabel="부채 잔액"
-          amountPlaceholder="잔액 예: 500000"
-          extraInput={
-            <TextInput
-              accessibilityLabel="금리"
-              keyboardType="decimal-pad"
-              onChangeText={setLiabilityInterestRate}
-              placeholder="금리 선택 입력 예: 3.5"
-              placeholderTextColor={colors.mutedText}
-              style={styles.input}
-              value={liabilityInterestRate}
+      {isLiabilityFormOpen ? (
+        <>
+          <SectionHeader title={editingLiabilityId ? "부채 수정" : "부채 추가"} />
+          <AppCard>
+            <AccountForm
+              amount={liabilityBalance}
+              amountLabel="부채 잔액"
+              amountPlaceholder="잔액 예: 500000"
+              extraInput={
+                <TextInput
+                  accessibilityLabel="금리"
+                  keyboardType="decimal-pad"
+                  onChangeText={setLiabilityInterestRate}
+                  placeholder="금리 선택 입력 예: 3.5"
+                  placeholderTextColor={colors.mutedText}
+                  style={styles.input}
+                  value={liabilityInterestRate}
+                />
+              }
+              memo={liabilityMemo}
+              memoLabel="부채 메모"
+              name={liabilityName}
+              nameLabel="부채 이름"
+              namePlaceholder="이름 예: 카드 예정 결제액"
+              onAmountChange={(value) => setLiabilityBalance(formatAmountInput(value))}
+              onCancel={resetLiabilityForm}
+              onMemoChange={setLiabilityMemo}
+              onNameChange={setLiabilityName}
+              onSave={handleLiabilitySave}
+              saveLabel={editingLiabilityId ? "부채 수정" : "부채 추가"}
+              typeLabelPrefix="부채 유형"
+              typeOptions={liabilityTypeOptions}
+              selectedType={liabilityType}
+              onTypeChange={setLiabilityType}
             />
-          }
-          memo={liabilityMemo}
-          memoLabel="부채 메모"
-          name={liabilityName}
-          nameLabel="부채 이름"
-          namePlaceholder="이름 예: 카드 예정 결제액"
-          onAmountChange={(value) => setLiabilityBalance(formatAmountInput(value))}
-          onCancel={editingLiabilityId ? resetLiabilityForm : undefined}
-          onMemoChange={setLiabilityMemo}
-          onNameChange={setLiabilityName}
-          onSave={handleLiabilitySave}
-          saveLabel={editingLiabilityId ? "부채 수정" : "부채 추가"}
-          typeLabelPrefix="부채 유형"
-          typeOptions={liabilityTypeOptions}
-          selectedType={liabilityType}
-          onTypeChange={setLiabilityType}
-        />
-      </AppCard>
+          </AppCard>
+        </>
+      ) : null}
 
       <SectionHeader title="부채 목록" />
       {liabilityAccounts.length ? (
@@ -436,6 +484,8 @@ export const AssetScreen = () => {
           icon="🧾"
           title="등록된 부채가 없습니다."
           description="카드 예정 결제액, 대출 잔액 등을 입력하면 순자산을 더 정확히 볼 수 있습니다."
+          actionLabel="부채 입력하기"
+          onActionPress={() => setIsLiabilityFormOpen(true)}
         />
       )}
     </Screen>
@@ -696,6 +746,22 @@ const styles = StyleSheet.create({
   },
   snapshotButton: {
     marginTop: spacing.md,
+  },
+  entryCard: {
+    marginTop: spacing.md,
+  },
+  cardTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  entryButtonRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  entryButton: {
+    flex: 1,
   },
   form: {
     gap: spacing.sm,

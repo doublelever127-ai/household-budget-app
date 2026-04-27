@@ -9,14 +9,16 @@ import { AssetScreen } from "../screens/AssetScreen";
 import { BudgetScreen } from "../screens/BudgetScreen";
 import { CategoryScreen } from "../screens/CategoryScreen";
 import { HomeScreen } from "../screens/HomeScreen";
+import { MoreScreen } from "../screens/MoreScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { StatisticsScreen } from "../screens/StatisticsScreen";
 import { TransactionFormScreen } from "../screens/TransactionFormScreen";
 import { TransactionListScreen } from "../screens/TransactionListScreen";
-import { RootTabParamList, TransactionsStackParamList } from "./types";
+import { MoreStackParamList, RootTabParamList, TransactionsStackParamList } from "./types";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const TransactionStack = createNativeStackNavigator<TransactionsStackParamList>();
+const MoreStack = createNativeStackNavigator<MoreStackParamList>();
 
 enableScreens();
 
@@ -31,7 +33,7 @@ const TransactionsNavigator = () => (
     <TransactionStack.Screen
       component={TransactionListScreen}
       name="TransactionList"
-      options={{ title: "거래 내역" }}
+      options={{ title: "기록" }}
     />
     <TransactionStack.Screen
       component={TransactionFormScreen}
@@ -41,14 +43,37 @@ const TransactionsNavigator = () => (
   </TransactionStack.Navigator>
 );
 
+const MoreNavigator = () => (
+  <MoreStack.Navigator screenOptions={headerOptions}>
+    <MoreStack.Screen
+      component={MoreScreen}
+      name="MoreHome"
+      options={{ title: "더보기" }}
+    />
+    <MoreStack.Screen
+      component={BudgetScreen}
+      name="Budget"
+      options={{ title: "예산 설정" }}
+    />
+    <MoreStack.Screen
+      component={CategoryScreen}
+      name="Categories"
+      options={{ title: "카테고리 관리" }}
+    />
+    <MoreStack.Screen
+      component={SettingsScreen}
+      name="Settings"
+      options={{ title: "앱 정보" }}
+    />
+  </MoreStack.Navigator>
+);
+
 const tabIcons: Record<keyof RootTabParamList, string> = {
   Home: "🏠",
   TransactionsTab: "🧾",
   Assets: "💎",
-  Categories: "🏷",
-  Budget: "💰",
   Statistics: "📊",
-  Settings: "⚙️",
+  More: "☰",
 };
 
 export const AppNavigator = () => (
@@ -84,18 +109,9 @@ export const AppNavigator = () => (
         component={TransactionsNavigator}
         name="TransactionsTab"
         options={{
-          tabBarAccessibilityLabel: "거래",
-          title: "거래",
+          tabBarAccessibilityLabel: "기록",
+          title: "기록",
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="TransactionsTab" />,
-        }}
-      />
-      <Tab.Screen
-        component={CategoryScreen}
-        name="Categories"
-        options={{
-          tabBarAccessibilityLabel: "카테고리",
-          title: "카테고리",
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Categories" />,
         }}
       />
       <Tab.Screen
@@ -108,30 +124,21 @@ export const AppNavigator = () => (
         }}
       />
       <Tab.Screen
-        component={BudgetScreen}
-        name="Budget"
-        options={{
-          tabBarAccessibilityLabel: "예산",
-          title: "예산",
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Budget" />,
-        }}
-      />
-      <Tab.Screen
         component={StatisticsScreen}
         name="Statistics"
         options={{
-          tabBarAccessibilityLabel: "통계",
-          title: "통계",
+          tabBarAccessibilityLabel: "분석",
+          title: "분석",
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Statistics" />,
         }}
       />
       <Tab.Screen
-        component={SettingsScreen}
-        name="Settings"
+        component={MoreNavigator}
+        name="More"
         options={{
-          tabBarAccessibilityLabel: "설정",
-          title: "설정",
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="Settings" />,
+          tabBarAccessibilityLabel: "더보기",
+          title: "더보기",
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="More" />,
         }}
       />
     </Tab.Navigator>

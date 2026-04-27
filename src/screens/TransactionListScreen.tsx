@@ -24,6 +24,7 @@ import { TransactionsStackParamList } from "../navigation/types";
 import { useLedgerStore } from "../store/useLedgerStore";
 import { Category, Transaction, TransactionFilterType } from "../types";
 import { getMonthlyTransactions } from "../utils/calculations";
+import { getTodayDateInput, shiftDateInput, toDateInputValue } from "../utils/date";
 
 type TransactionListNavigation = NativeStackNavigationProp<
   TransactionsStackParamList,
@@ -61,6 +62,42 @@ const sortCategoriesForFilter = (categories: Category[]) =>
 
     return (categoryOrder.get(a.id) ?? 999) - (categoryOrder.get(b.id) ?? 999);
   });
+
+type TransactionListItem =
+  | { id: string; type: "header"; title: string }
+  | { id: string; type: "transaction"; transaction: Transaction };
+
+const getTransactionGroupTitle = (date: string) => {
+  const dateInput = toDateInputValue(date);
+  const today = getTodayDateInput();
+  const yesterday = shiftDateInput(today, -1);
+
+  if (dateInput === today) {
+    return "오늘";
+  }
+
+  if (dateInput === yesterday) {
+    return "어제";
+  }
+
+  return dateInput;
+};
+
+const buildTransactionListItems = (transactions: Transaction[]): TransactionListItem[] => {
+  const items: TransactionListItem[] = [];
+  let currentTitle = "";
+
+  transactions.forEach((transaction) => {
+    const title = getTransactionGroupTitle(transaction.date);
+    if (title !== currentTitle) {
+      currentTitle = title;
+      items.push({ id: `header-${title}`, type: "header", title });
+    }
+    items.push({ id: transaction.id, type: "transaction", transaction });
+  });
+
+  return items;
+};
 
 export const TransactionListScreen = () => {
   const navigation = useNavigation<TransactionListNavigation>();
@@ -117,6 +154,10 @@ export const TransactionListScreen = () => {
       return matchesType && matchesCategory && matchesSearch;
     });
   }, [categoryFilter, categoryMap, month, searchQuery, transactions, typeFilter]);
+  const listItems = useMemo(
+    () => buildTransactionListItems(visibleTransactions),
+    [visibleTransactions],
+  );
 
   const hasActiveFilters =
     typeFilter !== "all" || categoryFilter !== "all" || Boolean(searchQuery.trim());
@@ -149,14 +190,20 @@ export const TransactionListScreen = () => {
     navigation.navigate("TransactionForm", transactionId ? { transactionId } : undefined);
   };
 
-  const renderTransaction = ({ item }: { item: Transaction }) => (
-    <TransactionItem
-      categories={categories}
-      onDelete={() => confirmDelete(item.id)}
-      onEdit={() => openForm(item.id)}
-      transaction={item}
-    />
-  );
+  const renderListItem = ({ item }: { item: TransactionListItem }) => {
+    if (item.type === "header") {
+      return <Text style={styles.dateHeader}>{item.title}</Text>;
+    }
+
+    return (
+      <TransactionItem
+        categories={categories}
+        onDelete={() => confirmDelete(item.transaction.id)}
+        onEdit={() => openForm(item.transaction.id)}
+        transaction={item.transaction}
+      />
+    );
+  };
 
   const header = (
     <View>
@@ -239,10 +286,10 @@ export const TransactionListScreen = () => {
         }
         ListHeaderComponent={header}
         contentContainerStyle={styles.listContent}
-        data={visibleTransactions}
+        data={listItems}
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="handled"
-        renderItem={renderTransaction}
+        renderItem={renderListItem}
         showsVerticalScrollIndicator={false}
       />
     </Screen>
@@ -360,5 +407,12 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: spacing.xl,
+  },
+  dateHeader: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "900",
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
   },
 });

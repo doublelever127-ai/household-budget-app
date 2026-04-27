@@ -5,12 +5,17 @@ export type TransactionsStackParamList = {
   TransactionForm: { transactionId?: string } | undefined;
 };
 
+export type MoreStackParamList = {
+  MoreHome: undefined;
+  Budget: undefined;
+  Categories: undefined;
+  Settings: undefined;
+};
+
 export type RootTabParamList = {
   Home: undefined;
   TransactionsTab: NavigatorScreenParams<TransactionsStackParamList>;
   Assets: undefined;
-  Categories: undefined;
-  Budget: undefined;
   Statistics: undefined;
-  Settings: undefined;
+  More: NavigatorScreenParams<MoreStackParamList> | undefined;
 };
