@@ -255,13 +255,16 @@ export const TransactionFormScreen = ({ navigation, route }: TransactionFormProp
 
       <Field label="금액">
         <TextInput
+          accessibilityHint="숫자만 입력하면 천 단위 콤마는 자동으로 표시됩니다."
+          accessibilityLabel="금액"
           keyboardType="number-pad"
           onChangeText={handleAmountChange}
-          placeholder="예: 12,000"
+          placeholder="예: 12000"
           placeholderTextColor={colors.mutedText}
           style={styles.input}
           value={amount}
         />
+        <Text style={styles.helperText}>숫자만 입력하면 콤마는 자동으로 붙습니다.</Text>
         {amount && !amountValidation.valid ? (
           <Text style={styles.errorText}>{amountValidation.error}</Text>
         ) : null}
@@ -423,6 +426,12 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: colors.expense,
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: spacing.sm,
+  },
+  helperText: {
+    color: colors.mutedText,
     fontSize: 13,
     fontWeight: "700",
     marginTop: spacing.sm,
