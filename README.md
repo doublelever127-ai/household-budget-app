@@ -113,6 +113,30 @@ npx expo export --platform web --output-dir .expo-web-export-check
 
 `npx expo export --platform web --output-dir .expo-web-export-check`는 웹 export가 가능한지 확인하는 검증 명령입니다. 생성되는 `.expo-web-export-check/` 폴더는 `.gitignore`에 포함되어 있습니다.
 
+## 웹 배포 방법
+
+GitHub Pages로 정적 웹 앱을 배포할 수 있습니다. 배포 명령은 Expo web export로 `dist/` 폴더를 만들고, `gh-pages` 브랜치에 업로드합니다.
+
+```bash
+npm run deploy
+```
+
+PowerShell에서 `npm` 실행이 막히면 아래처럼 실행할 수 있습니다.
+
+```bash
+npm.cmd run deploy
+```
+
+배포 후 GitHub 저장소의 `Settings > Pages`에서 배포 소스가 `gh-pages` 브랜치로 설정되어 있는지 확인합니다.
+
+예상 웹 주소:
+
+```text
+https://doublelever127-ai.github.io/household-budget-app/
+```
+
+친구나 주변 사람에게 테스트를 부탁할 때는 이 주소를 공유하면 됩니다. 웹 배포 버전도 브라우저의 로컬 저장소를 사용하므로, 기기나 브라우저가 바뀌면 데이터가 공유되지 않습니다.
+
 ## 폴더 구조
 
 ```text
