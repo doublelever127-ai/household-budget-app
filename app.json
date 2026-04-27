@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "가계부 MVP",
+    "name": "자산 가계부",
     "slug": "household-budget-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,6 +16,9 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.doublelever127.householdbudget",
+      "versionCode": 1,
+      "permissions": [],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

@@ -107,6 +107,22 @@ export const MoreScreen = ({ navigation }: MoreScreenProps) => {
           현재 버전은 클라우드 동기화와 백업/복원 기능을 제공하지 않습니다.
         </Text>
       </AppCard>
+
+      <AppCard style={styles.card}>
+        <Text style={styles.cardTitle}>개인정보 및 출시 안내</Text>
+        <Text style={styles.description}>
+          자산 가계부는 사용자가 직접 입력한 거래, 예산, 자산, 부채 데이터를 외부 서버로 보내지
+          않고 기기 안에 저장하는 방식으로 설계되어 있습니다.
+        </Text>
+        <Text style={styles.description}>
+          금융 계정 비밀번호, 주민등록번호, 카드 전체 번호, 인증번호처럼 민감한 인증 정보는
+          메모나 이름 입력란에 저장하지 마세요.
+        </Text>
+        <Text style={styles.description}>
+          Google Play 출시 전에는 개인정보처리방침, Data safety, 실제 기기 테스트, 폐쇄 테스트
+          절차를 별도로 확인해야 합니다.
+        </Text>
+      </AppCard>
     </Screen>
   );
 };

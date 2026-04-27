@@ -282,6 +282,31 @@ abc100
 - 접근성 추가 개선
 - 실제 기기 테스트 확대
 
+## Google Play 출시 준비
+
+현재 앱은 개인 사용과 웹 공유 테스트가 가능한 MVP 상태입니다. Google Play에 실제 출시하려면 Android 빌드, 개인정보처리방침, Data safety, 콘텐츠 등급, 스토어 등록 이미지, 실제 기기 테스트를 추가로 준비해야 합니다.
+
+출시 준비 문서는 아래 파일에 정리되어 있습니다.
+
+- `docs/GOOGLE_PLAY_RELEASE_CHECKLIST.md`
+- `docs/PRIVACY_POLICY.md`
+
+Android 출시 설정은 다음 값을 기준으로 준비되어 있습니다.
+
+- 앱 이름: `자산 가계부`
+- Android 패키지명: `com.doublelever127.householdbudget`
+- 앱 버전: `1.0.0`
+- Android versionCode: `1`
+- EAS production build: Android App Bundle (`.aab`)
+
+Google Play 제출용 빌드는 EAS CLI 설정 후 다음 명령으로 생성합니다.
+
+```bash
+eas build --platform android --profile production
+```
+
+정식 출시 전에는 실제 Android 기기에서 거래 입력, 예산 설정, 자산 입력, 데이터 유지, 데이터 초기화, 큰 글씨 표시, 오프라인 사용을 반드시 확인하는 것을 권장합니다.
+
 ## 개발 상태
 
 현재 상태는 MVP 기능 구현과 핵심 결함 수정이 완료된 단계입니다.
