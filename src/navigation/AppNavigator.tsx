@@ -49,7 +49,7 @@ const MoreNavigator = () => (
     <MoreStack.Screen
       component={MoreScreen}
       name="MoreHome"
-      options={{ title: "더보기" }}
+      options={{ headerShown: false }}
     />
     <MoreStack.Screen
       component={BudgetScreen}
