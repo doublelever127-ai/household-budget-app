@@ -1,6 +1,14 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -124,6 +132,7 @@ const quickPresets: QuickPreset[] = [
 
 export const TransactionFormScreen = ({ navigation, route }: TransactionFormProps) => {
   const transactionId = route.params?.transactionId;
+  const formScrollRef = useRef<ScrollView>(null);
   const {
     transactions,
     categories,
@@ -168,6 +177,12 @@ export const TransactionFormScreen = ({ navigation, route }: TransactionFormProp
     [type],
   );
   const amountValidation = useMemo(() => validateAmountInput(amount), [amount]);
+
+  const scrollToLowerFields = () => {
+    setTimeout(() => {
+      formScrollRef.current?.scrollToEnd({ animated: true });
+    }, 250);
+  };
 
   useEffect(() => {
     if (categoryId && !visibleCategories.some((category) => category.id === categoryId)) {
@@ -230,7 +245,7 @@ export const TransactionFormScreen = ({ navigation, route }: TransactionFormProp
   };
 
   return (
-    <Screen>
+    <Screen scrollRef={formScrollRef}>
       <Field label="유형">
         <SegmentedControl
           onChange={handleTypeChange}
@@ -326,6 +341,8 @@ export const TransactionFormScreen = ({ navigation, route }: TransactionFormProp
 
       <Field label="메모">
         <TextInput
+          accessibilityLabel="메모"
+          onFocus={scrollToLowerFields}
           onChangeText={setMemo}
           placeholder="예: 점심 식사"
           placeholderTextColor={colors.mutedText}
@@ -336,6 +353,8 @@ export const TransactionFormScreen = ({ navigation, route }: TransactionFormProp
 
       <Field label="결제수단 또는 계좌명">
         <TextInput
+          accessibilityLabel="결제수단 또는 계좌명"
+          onFocus={scrollToLowerFields}
           onChangeText={setPaymentMethod}
           placeholder="예: 체크카드, 주거래 계좌"
           placeholderTextColor={colors.mutedText}

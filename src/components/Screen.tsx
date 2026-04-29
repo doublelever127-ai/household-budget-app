@@ -1,5 +1,7 @@
-import { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleProp,
   StyleSheet,
@@ -15,9 +17,15 @@ interface ScreenProps {
   children: ReactNode;
   scroll?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
+  scrollRef?: Ref<ScrollView>;
 }
 
-export const Screen = ({ children, scroll = true, contentContainerStyle }: ScreenProps) => {
+export const Screen = ({
+  children,
+  scroll = true,
+  contentContainerStyle,
+  scrollRef,
+}: ScreenProps) => {
   const { width } = useWindowDimensions();
   const isTabletWidth = width >= layout.tabletBreakpoint;
   const horizontalPadding = isTabletWidth ? spacing.xl : spacing.lg;
@@ -40,12 +48,20 @@ export const Screen = ({ children, scroll = true, contentContainerStyle }: Scree
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.scrollContent}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoiding}
       >
-        <View style={frameStyle}>{children}</View>
-      </ScrollView>
+        <ScrollView
+          automaticallyAdjustKeyboardInsets
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+          ref={scrollRef}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <View style={frameStyle}>{children}</View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -60,9 +76,12 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
   },
+  keyboardAvoiding: {
+    flex: 1,
+  },
   scrollContent: {
     alignItems: "center",
-    paddingBottom: spacing.xl * 2,
+    paddingBottom: spacing.xl * 5,
     width: "100%",
   },
   frame: {
