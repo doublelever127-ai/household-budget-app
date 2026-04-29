@@ -20,9 +20,9 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.borderSoft,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    padding: spacing.md,
+    padding: spacing.lg,
     ...shadows.card,
   },
   accent: {

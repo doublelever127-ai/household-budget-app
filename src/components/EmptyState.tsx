@@ -16,9 +16,11 @@ export const EmptyState = ({
   description,
   actionLabel,
   onActionPress,
-  icon = "🧾",
+  icon = "✨",
 }: EmptyStateProps) => (
   <View style={styles.container}>
+    <View style={[styles.decorationDot, styles.decorationDotLeft]} />
+    <View style={[styles.decorationDot, styles.decorationDotRight]} />
     <View style={styles.iconBubble}>
       <Text style={styles.icon}>{icon}</Text>
     </View>
@@ -33,33 +35,55 @@ export const EmptyState = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.playfulSoft,
     borderColor: colors.borderSoft,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     borderWidth: 1,
+    overflow: "hidden",
     padding: spacing.xl,
+  },
+  decorationDot: {
+    borderRadius: radius.full,
+    position: "absolute",
+  },
+  decorationDotLeft: {
+    backgroundColor: colors.blushSoft,
+    height: 54,
+    left: -18,
+    top: -18,
+    width: 54,
+  },
+  decorationDotRight: {
+    backgroundColor: colors.mintSoft,
+    bottom: -22,
+    height: 68,
+    right: -22,
+    width: 68,
   },
   iconBubble: {
     alignItems: "center",
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.surface,
+    borderColor: colors.warningSoft,
     borderRadius: radius.full,
-    height: 48,
+    borderWidth: 1,
+    height: 56,
     justifyContent: "center",
     marginBottom: spacing.md,
-    width: 48,
+    width: 56,
   },
   icon: {
-    fontSize: 24,
+    fontSize: 26,
   },
   title: {
     color: colors.text,
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "900",
     textAlign: "center",
   },
   description: {
     color: colors.mutedText,
     fontSize: 14,
+    fontWeight: "600",
     lineHeight: 20,
     marginTop: spacing.sm,
     textAlign: "center",

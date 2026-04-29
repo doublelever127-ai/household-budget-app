@@ -157,6 +157,7 @@ export const HomeScreen = () => {
   return (
     <Screen>
       <MonthSelector month={month} onChange={setSelectedMonth} />
+      <FriendlyNote />
 
       <AppCard
         accentColor={summary.balance >= 0 ? colors.income : colors.expense}
@@ -287,7 +288,58 @@ const Metric = ({ label, value, tone = "neutral" }: MetricProps) => (
   </View>
 );
 
+const FriendlyNote = () => (
+  <View style={styles.friendlyNote}>
+    <View style={styles.friendlyIconBubble}>
+      <Text style={styles.friendlyIcon}>✨</Text>
+    </View>
+    <View style={styles.friendlyTextBox}>
+      <Text style={styles.friendlyTitle}>오늘도 돈 흐름을 살짝 정리해봐요</Text>
+      <Text style={styles.friendlyDescription}>
+        작은 기록이 쌓이면 이번 달 자산 흐름이 더 선명해져요.
+      </Text>
+    </View>
+  </View>
+);
+
 const styles = StyleSheet.create({
+  friendlyNote: {
+    alignItems: "center",
+    backgroundColor: colors.playfulSoft,
+    borderColor: colors.warningSoft,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    padding: spacing.md,
+  },
+  friendlyIconBubble: {
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: radius.full,
+    height: 44,
+    justifyContent: "center",
+    width: 44,
+  },
+  friendlyIcon: {
+    fontSize: 22,
+  },
+  friendlyTextBox: {
+    flex: 1,
+  },
+  friendlyTitle: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  friendlyDescription: {
+    color: colors.mutedText,
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 17,
+    marginTop: spacing.xs,
+  },
   heroCard: {
     marginBottom: spacing.md,
     paddingLeft: spacing.lg,

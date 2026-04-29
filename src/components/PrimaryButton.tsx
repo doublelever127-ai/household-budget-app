@@ -48,7 +48,7 @@ export const PrimaryButton = ({
 const styles = StyleSheet.create({
   button: {
     alignItems: "center",
-    borderRadius: radius.lg,
+    borderRadius: radius.full,
     flexDirection: "row",
     justifyContent: "center",
     minHeight: 52,
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "900",
   },
   primaryLabel: {
     color: "#FFFFFF",
