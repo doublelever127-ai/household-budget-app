@@ -27,6 +27,12 @@ export const spacing = {
   xl: 24,
 };
 
+export const layout = {
+  tabletBreakpoint: 768,
+  maxContentWidth: 880,
+  maxFormWidth: 720,
+};
+
 export const radius = {
   sm: 8,
   md: 12,

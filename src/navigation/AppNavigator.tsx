@@ -1,10 +1,11 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { enableScreens } from "react-native-screens";
 
-import { colors, radius } from "../constants/theme";
+import { colors, layout, radius } from "../constants/theme";
 import { AssetScreen } from "../screens/AssetScreen";
 import { BudgetScreen } from "../screens/BudgetScreen";
 import { CategoryScreen } from "../screens/CategoryScreen";
@@ -76,7 +77,13 @@ const tabIcons: Record<keyof RootTabParamList, string> = {
   More: "☰",
 };
 
-export const AppNavigator = () => (
+export const AppNavigator = () => {
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const isTabletWidth = width >= layout.tabletBreakpoint;
+  const bottomPadding = Math.max(10, insets.bottom || 0);
+
+  return (
   <NavigationContainer>
     <Tab.Navigator
       detachInactiveScreens
@@ -87,13 +94,16 @@ export const AppNavigator = () => (
         tabBarInactiveTintColor: colors.mutedText,
         tabBarIconStyle: { marginTop: 5 },
         tabBarLabelStyle: { fontSize: 12, fontWeight: "800", marginBottom: 7 },
-        tabBarStyle: {
+        tabBarStyle: [
+          {
           backgroundColor: colors.surface,
           borderTopColor: colors.borderSoft,
-          height: 82,
-          paddingBottom: 10,
+          height: 72 + bottomPadding,
+          paddingBottom: bottomPadding,
           paddingTop: 8,
-        },
+          },
+          isTabletWidth && styles.tabletTabBar,
+        ],
       }}
     >
       <Tab.Screen
@@ -143,7 +153,8 @@ export const AppNavigator = () => (
       />
     </Tab.Navigator>
   </NavigationContainer>
-);
+  );
+};
 
 interface TabIconProps {
   focused: boolean;
@@ -175,5 +186,15 @@ const styles = StyleSheet.create({
   },
   tabIcon: {
     fontSize: 17,
+  },
+  tabletTabBar: {
+    alignSelf: "center",
+    borderColor: colors.borderSoft,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    maxWidth: layout.maxContentWidth,
+    width: "100%",
   },
 });
