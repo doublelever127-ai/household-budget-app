@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 
+import { CalendarDatePicker } from "../components/CalendarDatePicker";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { SegmentedControl } from "../components/SegmentedControl";
@@ -150,6 +151,7 @@ export const TransactionFormScreen = ({ navigation, route }: TransactionFormProp
   const [paymentMethod, setPaymentMethod] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isPresetOpen, setIsPresetOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: editingTransaction ? "거래 수정" : "거래 추가" });
@@ -302,16 +304,27 @@ export const TransactionFormScreen = ({ navigation, route }: TransactionFormProp
       </Field>
 
       <Field label="날짜">
-        <TextInput
-          autoCapitalize="none"
-          keyboardType="number-pad"
-          maxLength={10}
-          onChangeText={handleDateChange}
-          placeholder="YYYY-MM-DD"
-          placeholderTextColor={colors.mutedText}
-          style={styles.input}
-          value={date}
-        />
+        <View style={styles.dateInputRow}>
+          <TextInput
+            accessibilityLabel="날짜"
+            autoCapitalize="none"
+            keyboardType="number-pad"
+            maxLength={10}
+            onChangeText={handleDateChange}
+            placeholder="YYYY-MM-DD"
+            placeholderTextColor={colors.mutedText}
+            style={[styles.input, styles.dateInput]}
+            value={date}
+          />
+          <Pressable
+            accessibilityLabel="달력 열기"
+            accessibilityRole="button"
+            onPress={() => setIsCalendarOpen(true)}
+            style={styles.calendarButton}
+          >
+            <Text style={styles.calendarButtonText}>달력</Text>
+          </Pressable>
+        </View>
         <View style={styles.dateButtonRow}>
           <DateQuickButton
             label="오늘"
@@ -324,6 +337,13 @@ export const TransactionFormScreen = ({ navigation, route }: TransactionFormProp
           <DateQuickButton label="전날" onPress={() => setDate(shiftDateInput(date, -1))} />
           <DateQuickButton label="다음 날" onPress={() => setDate(shiftDateInput(date, 1))} />
         </View>
+        <CalendarDatePicker
+          defaultMonth={selectedMonth}
+          onClose={() => setIsCalendarOpen(false)}
+          onSelect={setDate}
+          value={date}
+          visible={isCalendarOpen}
+        />
       </Field>
 
       <Field label="카테고리">
@@ -442,6 +462,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 48,
     paddingHorizontal: spacing.md,
+  },
+  dateInputRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  dateInput: {
+    flex: 1,
+  },
+  calendarButton: {
+    alignItems: "center",
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
+    justifyContent: "center",
+    minHeight: 48,
+    paddingHorizontal: spacing.md,
+  },
+  calendarButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "900",
   },
   dateButtonRow: {
     flexDirection: "row",
