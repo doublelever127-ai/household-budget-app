@@ -2,7 +2,7 @@
   "expo": {
     "name": "자산 가계부",
     "slug": "household-budget-app",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -17,7 +17,7 @@
     },
     "android": {
       "package": "com.doublelever127.householdbudget",
-      "versionCode": 6,
+      "versionCode": 7,
       "permissions": [],
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {

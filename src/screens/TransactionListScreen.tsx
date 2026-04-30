@@ -1,6 +1,6 @@
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -12,11 +12,13 @@ import {
   View,
 } from "react-native";
 
+import { AppCard } from "../components/AppCard";
 import { EmptyState } from "../components/EmptyState";
 import { MonthSelector } from "../components/MonthSelector";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { SegmentedControl } from "../components/SegmentedControl";
+import { TransactionMonthCalendar } from "../components/TransactionMonthCalendar";
 import { TransactionItem } from "../components/TransactionItem";
 import { DEFAULT_CATEGORIES } from "../constants/categories";
 import { colors, radius, spacing } from "../constants/theme";
@@ -24,7 +26,14 @@ import { TransactionsStackParamList } from "../navigation/types";
 import { useLedgerStore } from "../store/useLedgerStore";
 import { Category, Transaction, TransactionFilterType } from "../types";
 import { getMonthlyTransactions } from "../utils/calculations";
-import { getTodayDateInput, shiftDateInput, toDateInputValue } from "../utils/date";
+import {
+  formatKoreanDate,
+  getDefaultTransactionDate,
+  getTodayDateInput,
+  shiftDateInput,
+  toDateInputValue,
+} from "../utils/date";
+import { formatCurrency } from "../utils/format";
 
 type TransactionListNavigation = NativeStackNavigationProp<
   TransactionsStackParamList,
@@ -35,6 +44,13 @@ const typeOptions = [
   { label: "전체", value: "all" },
   { label: "수입", value: "income" },
   { label: "지출", value: "expense" },
+] as const;
+
+type ViewMode = "list" | "calendar";
+
+const viewModeOptions = [
+  { label: "목록", value: "list" },
+  { label: "달력", value: "calendar" },
 ] as const;
 
 const getCategoryFilterLabel = (
@@ -112,6 +128,16 @@ export const TransactionListScreen = () => {
   const [typeFilter, setTypeFilter] = useState<TransactionFilterType>("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState(
+    () => getDefaultTransactionDate(month),
+  );
+
+  useEffect(() => {
+    setSelectedCalendarDate((current) =>
+      current.startsWith(month) ? current : getDefaultTransactionDate(month),
+    );
+  }, [month]);
 
   const filteredCategories = useMemo(() => {
     if (typeFilter === "all") {
@@ -155,9 +181,29 @@ export const TransactionListScreen = () => {
     });
   }, [categoryFilter, categoryMap, month, searchQuery, transactions, typeFilter]);
   const listItems = useMemo(
-    () => buildTransactionListItems(visibleTransactions),
-    [visibleTransactions],
+    () =>
+      buildTransactionListItems(
+        viewMode === "calendar"
+          ? visibleTransactions.filter(
+              (transaction) => toDateInputValue(transaction.date) === selectedCalendarDate,
+            )
+          : visibleTransactions,
+      ),
+    [selectedCalendarDate, viewMode, visibleTransactions],
   );
+  const selectedDateTransactions = useMemo(
+    () =>
+      visibleTransactions.filter(
+        (transaction) => toDateInputValue(transaction.date) === selectedCalendarDate,
+      ),
+    [selectedCalendarDate, visibleTransactions],
+  );
+  const selectedDateExpense = selectedDateTransactions
+    .filter((transaction) => transaction.type === "expense")
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
+  const selectedDateIncome = selectedDateTransactions
+    .filter((transaction) => transaction.type === "income")
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
 
   const hasActiveFilters =
     typeFilter !== "all" || categoryFilter !== "all" || Boolean(searchQuery.trim());
@@ -173,6 +219,15 @@ export const TransactionListScreen = () => {
     setSearchQuery("");
   };
 
+  const handleCalendarDateSelect = (date: string) => {
+    setSelectedCalendarDate(date);
+
+    const dateMonth = date.slice(0, 7);
+    if (dateMonth !== month) {
+      setSelectedMonth(dateMonth);
+    }
+  };
+
   const confirmDelete = (id: string) => {
     Alert.alert("거래 삭제", "이 거래 내역을 삭제할까요?", [
       { text: "취소", style: "cancel" },
@@ -186,8 +241,12 @@ export const TransactionListScreen = () => {
     ]);
   };
 
-  const openForm = (transactionId?: string) => {
-    navigation.navigate("TransactionForm", transactionId ? { transactionId } : undefined);
+  const openForm = (params?: {
+    transactionId?: string;
+    initialDate?: string;
+    initialType?: "income" | "expense";
+  }) => {
+    navigation.navigate("TransactionForm", params);
   };
 
   const renderListItem = ({ item }: { item: TransactionListItem }) => {
@@ -199,7 +258,7 @@ export const TransactionListScreen = () => {
       <TransactionItem
         categories={categories}
         onDelete={() => confirmDelete(item.transaction.id)}
-        onEdit={() => openForm(item.transaction.id)}
+        onEdit={() => openForm({ transactionId: item.transaction.id })}
         transaction={item.transaction}
       />
     );
@@ -208,6 +267,13 @@ export const TransactionListScreen = () => {
   const header = (
     <View>
       <MonthSelector month={month} onChange={setSelectedMonth} />
+      <View style={styles.viewModeControl}>
+        <SegmentedControl
+          onChange={setViewMode}
+          options={[...viewModeOptions]}
+          value={viewMode}
+        />
+      </View>
       <SegmentedControl
         onChange={handleTypeChange}
         options={[...typeOptions]}
@@ -269,7 +335,50 @@ export const TransactionListScreen = () => {
         ) : null}
       </View>
 
-      <PrimaryButton label="거래 추가" onPress={() => openForm()} style={styles.addButton} />
+      {viewMode === "calendar" ? (
+        <>
+          <TransactionMonthCalendar
+            month={month}
+            onSelectDate={handleCalendarDateSelect}
+            selectedDate={selectedCalendarDate}
+            transactions={visibleTransactions}
+          />
+          <AppCard style={styles.selectedDateCard}>
+            <Text style={styles.selectedDateTitle}>
+              {formatKoreanDate(selectedCalendarDate)}
+            </Text>
+            <Text style={styles.selectedDateDescription}>
+              이 날짜에는 지출 {formatCurrency(selectedDateExpense)}, 수입{" "}
+              {formatCurrency(selectedDateIncome)}이 기록되어 있습니다.
+            </Text>
+            <View style={styles.selectedDateActions}>
+              <PrimaryButton
+                label="이 날짜에 지출 추가"
+                onPress={() =>
+                  openForm({
+                    initialDate: selectedCalendarDate,
+                    initialType: "expense",
+                  })
+                }
+                style={styles.selectedDateActionButton}
+              />
+              <PrimaryButton
+                label="수입 추가"
+                onPress={() =>
+                  openForm({
+                    initialDate: selectedCalendarDate,
+                    initialType: "income",
+                  })
+                }
+                style={styles.selectedDateActionButton}
+                variant="secondary"
+              />
+            </View>
+          </AppCard>
+        </>
+      ) : (
+        <PrimaryButton label="거래 추가" onPress={() => openForm()} style={styles.addButton} />
+      )}
     </View>
   );
 
@@ -279,9 +388,23 @@ export const TransactionListScreen = () => {
         ListEmptyComponent={
           <EmptyState
             actionLabel="첫 거래 추가"
-            description="필터나 검색어를 바꾸거나 새 거래를 등록해 보세요."
-            onActionPress={() => openForm()}
-            title="아직 등록된 거래가 없습니다."
+            description={
+              viewMode === "calendar"
+                ? "선택한 날짜에 아직 거래가 없습니다. 이 날짜로 바로 기록해 보세요."
+                : "필터나 검색어를 바꾸거나 새 거래를 등록해 보세요."
+            }
+            onActionPress={() =>
+              openForm(
+                viewMode === "calendar"
+                  ? { initialDate: selectedCalendarDate, initialType: "expense" }
+                  : undefined,
+              )
+            }
+            title={
+              viewMode === "calendar"
+                ? "선택한 날짜에 거래가 없습니다."
+                : "아직 등록된 거래가 없습니다."
+            }
           />
         }
         ListHeaderComponent={header}
@@ -317,6 +440,9 @@ const CategoryChip = ({ label, active, onPress, category }: CategoryChipProps) =
 );
 
 const styles = StyleSheet.create({
+  viewModeControl: {
+    marginBottom: spacing.md,
+  },
   categoryRow: {
     gap: spacing.sm,
     paddingVertical: spacing.md,
@@ -351,6 +477,28 @@ const styles = StyleSheet.create({
   },
   addButton: {
     marginBottom: spacing.lg,
+  },
+  selectedDateCard: {
+    marginBottom: spacing.lg,
+  },
+  selectedDateTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "900",
+  },
+  selectedDateDescription: {
+    color: colors.mutedText,
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 20,
+    marginTop: spacing.sm,
+  },
+  selectedDateActions: {
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  selectedDateActionButton: {
+    minHeight: 48,
   },
   searchBox: {
     alignItems: "center",

@@ -2,7 +2,13 @@ import { NavigatorScreenParams } from "@react-navigation/native";
 
 export type TransactionsStackParamList = {
   TransactionList: undefined;
-  TransactionForm: { transactionId?: string } | undefined;
+  TransactionForm:
+    | {
+        transactionId?: string;
+        initialDate?: string;
+        initialType?: "income" | "expense";
+      }
+    | undefined;
 };
 
 export type MoreStackParamList = {

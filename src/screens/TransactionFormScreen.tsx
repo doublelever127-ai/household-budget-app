@@ -133,6 +133,8 @@ const quickPresets: QuickPreset[] = [
 
 export const TransactionFormScreen = ({ navigation, route }: TransactionFormProps) => {
   const transactionId = route.params?.transactionId;
+  const initialDate = route.params?.initialDate;
+  const initialType = route.params?.initialType;
   const formScrollRef = useRef<ScrollView>(null);
   const {
     transactions,
@@ -143,9 +145,11 @@ export const TransactionFormScreen = ({ navigation, route }: TransactionFormProp
   } = useLedgerStore();
   const editingTransaction = transactions.find((transaction) => transaction.id === transactionId);
 
-  const [type, setType] = useState<TransactionType>("expense");
+  const [type, setType] = useState<TransactionType>(initialType ?? "expense");
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(() => getDefaultTransactionDate(selectedMonth));
+  const [date, setDate] = useState(
+    () => initialDate ?? getDefaultTransactionDate(selectedMonth),
+  );
   const [categoryId, setCategoryId] = useState("");
   const [memo, setMemo] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -169,6 +173,20 @@ export const TransactionFormScreen = ({ navigation, route }: TransactionFormProp
     setMemo(editingTransaction.memo ?? "");
     setPaymentMethod(editingTransaction.paymentMethod ?? "");
   }, [editingTransaction]);
+
+  useEffect(() => {
+    if (editingTransaction) {
+      return;
+    }
+
+    if (initialType) {
+      setType(initialType);
+    }
+
+    if (initialDate) {
+      setDate(initialDate);
+    }
+  }, [editingTransaction, initialDate, initialType]);
 
   const visibleCategories = useMemo(
     () => categories.filter((category) => category.type === type),
