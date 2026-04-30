@@ -33,7 +33,11 @@ interface TransactionMonthCalendarProps {
 
 const getCompactAmount = (amount: number) => {
   if (amount >= 10000) {
-    return `${Math.round(amount / 10000).toLocaleString("ko-KR")}만`;
+    const manWon = Math.round((amount / 10000) * 10) / 10;
+    const formatted =
+      manWon % 1 === 0 ? manWon.toFixed(0) : manWon.toFixed(1);
+
+    return `${formatted}만`;
   }
 
   return formatCurrency(amount);

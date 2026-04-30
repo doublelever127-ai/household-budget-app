@@ -204,6 +204,7 @@ export const TransactionListScreen = () => {
   const selectedDateIncome = selectedDateTransactions
     .filter((transaction) => transaction.type === "income")
     .reduce((sum, transaction) => sum + transaction.amount, 0);
+  const selectedDateBalance = selectedDateIncome - selectedDateExpense;
 
   const hasActiveFilters =
     typeFilter !== "all" || categoryFilter !== "all" || Boolean(searchQuery.trim());
@@ -226,6 +227,10 @@ export const TransactionListScreen = () => {
     if (dateMonth !== month) {
       setSelectedMonth(dateMonth);
     }
+  };
+
+  const goToToday = () => {
+    handleCalendarDateSelect(getTodayDateInput());
   };
 
   const confirmDelete = (id: string) => {
@@ -322,7 +327,11 @@ export const TransactionListScreen = () => {
         ) : null}
       </View>
       <View style={styles.filterSummaryRow}>
-        <Text style={styles.resultText}>검색 결과 {visibleTransactions.length}건</Text>
+        <Text style={styles.resultText}>
+          {viewMode === "calendar"
+            ? `선택 날짜 ${selectedDateTransactions.length}건 · 이번 달 ${visibleTransactions.length}건`
+            : `검색 결과 ${visibleTransactions.length}건`}
+        </Text>
         {hasActiveFilters ? (
           <Pressable
             accessibilityLabel="필터 초기화"
@@ -344,13 +353,41 @@ export const TransactionListScreen = () => {
             transactions={visibleTransactions}
           />
           <AppCard style={styles.selectedDateCard}>
-            <Text style={styles.selectedDateTitle}>
-              {formatKoreanDate(selectedCalendarDate)}
-            </Text>
+            <View style={styles.selectedDateHeader}>
+              <Text style={styles.selectedDateTitle}>
+                {formatKoreanDate(selectedCalendarDate)}
+              </Text>
+              <Pressable
+                accessibilityLabel="오늘 날짜로 이동"
+                accessibilityRole="button"
+                onPress={goToToday}
+                style={styles.todayButton}
+              >
+                <Text style={styles.todayButtonText}>오늘</Text>
+              </Pressable>
+            </View>
             <Text style={styles.selectedDateDescription}>
               이 날짜에는 지출 {formatCurrency(selectedDateExpense)}, 수입{" "}
               {formatCurrency(selectedDateIncome)}이 기록되어 있습니다.
+              {hasActiveFilters ? " 현재 필터 기준으로 계산했습니다." : ""}
             </Text>
+            <View style={styles.dailySummaryRow}>
+              <DailySummaryPill
+                label="지출"
+                tone="expense"
+                value={formatCurrency(selectedDateExpense)}
+              />
+              <DailySummaryPill
+                label="수입"
+                tone="income"
+                value={formatCurrency(selectedDateIncome)}
+              />
+              <DailySummaryPill
+                label="차이"
+                tone={selectedDateBalance >= 0 ? "income" : "expense"}
+                value={formatCurrency(Math.abs(selectedDateBalance))}
+              />
+            </View>
             <View style={styles.selectedDateActions}>
               <PrimaryButton
                 label="이 날짜에 지출 추가"
@@ -439,6 +476,21 @@ const CategoryChip = ({ label, active, onPress, category }: CategoryChipProps) =
   </Pressable>
 );
 
+interface DailySummaryPillProps {
+  label: string;
+  value: string;
+  tone: "income" | "expense";
+}
+
+const DailySummaryPill = ({ label, value, tone }: DailySummaryPillProps) => (
+  <View style={[styles.dailySummaryPill, styles[`${tone}SummaryPill`]]}>
+    <Text style={styles.dailySummaryLabel}>{label}</Text>
+    <Text style={[styles.dailySummaryValue, styles[`${tone}SummaryValue`]]}>
+      {value}
+    </Text>
+  </View>
+);
+
 const styles = StyleSheet.create({
   viewModeControl: {
     marginBottom: spacing.md,
@@ -481,9 +533,26 @@ const styles = StyleSheet.create({
   selectedDateCard: {
     marginBottom: spacing.lg,
   },
+  selectedDateHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
   selectedDateTitle: {
     color: colors.text,
     fontSize: 17,
+    fontWeight: "900",
+  },
+  todayButton: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.full,
+    justifyContent: "center",
+    minHeight: 34,
+    paddingHorizontal: spacing.md,
+  },
+  todayButtonText: {
+    color: colors.primary,
+    fontSize: 13,
     fontWeight: "900",
   },
   selectedDateDescription: {
@@ -492,6 +561,39 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     lineHeight: 20,
     marginTop: spacing.sm,
+  },
+  dailySummaryRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  dailySummaryPill: {
+    borderRadius: radius.lg,
+    flex: 1,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  incomeSummaryPill: {
+    backgroundColor: colors.incomeSoft,
+  },
+  expenseSummaryPill: {
+    backgroundColor: colors.expenseSoft,
+  },
+  dailySummaryLabel: {
+    color: colors.mutedText,
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  dailySummaryValue: {
+    fontSize: 13,
+    fontWeight: "900",
+    marginTop: spacing.xs,
+  },
+  incomeSummaryValue: {
+    color: colors.income,
+  },
+  expenseSummaryValue: {
+    color: colors.expense,
   },
   selectedDateActions: {
     gap: spacing.sm,
